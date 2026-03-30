@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -25,7 +26,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->input('email'))->first();
 
-        if (!$user || $request->input('password') !== $user->password) {
+        if (!$user || !Hash::check($request->input('password'), $user->password)) {
             return back()
                 ->withErrors(['email' => 'Email atau password tidak sesuai.'])
                 ->withInput();

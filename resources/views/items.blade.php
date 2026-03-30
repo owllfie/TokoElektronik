@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Toko Elektronik | Stock')
+@section('title', 'Toko Elektronik | Items')
 @section('brand_mark', 'E')
 @section('brand_name', 'Electro')
 
@@ -270,12 +270,12 @@
 @section('content')
     <main>
         <div class="panel">
-            <h1>Stock</h1>
+            <h1>Items</h1>
             <div class="toolbar">
-                <form class="search" method="GET" action="{{ route('stock') }}" id="searchForm">
-                    <input type="text" name="q" placeholder="Search stock..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
+                <form class="search" method="GET" action="{{ route('items') }}" id="searchForm">
+                    <input type="text" name="q" placeholder="Search items..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
                 </form>
-                <button class="add-btn" type="button" data-modal="add">Add Stock</button>
+                <button class="add-btn" type="button" data-modal="add">Add Item</button>
             </div>
             @if(session('status'))
                 <p>{{ session('status') }}</p>
@@ -290,92 +290,81 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID Barang</th>
-                        <th>Jumlah</th>
-                        <th>Harga Satuan</th>
-                        <th>Total Harga</th>
+                        <th>Nama Barang</th>
+                        <th>Stok</th>
+                        <th>Harga</th>
                         <th>Tipe</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($stocks as $stock)
+                    @forelse ($items as $item)
                         <tr>
-                            <td>{{ $stock->id_barang }}</td>
-                            <td>{{ $stock->jumlah }}</td>
-                            <td>{{ $stock->harga_satuan }}</td>
-                            <td>{{ $stock->total_harga }}</td>
-                            <td>{{ $stock->tipe }}</td>
+                            <td>{{ $item->nama_barang }}</td>
+                            <td>{{ $item->stok }}</td>
+                            <td>{{ $item->harga }}</td>
+                            <td>{{ $item->tipe ?? '-' }}</td>
                             <td>
                                 <div class="actions">
                                     <button
                                         class="btn btn-update"
                                         type="button"
                                         data-modal="update"
-                                        data-id="{{ $stock->getKey() }}"
-                                        data-id-barang="{{ $stock->id_barang }}"
-                                        data-jumlah="{{ $stock->jumlah }}"
-                                        data-harga-satuan="{{ $stock->harga_satuan }}"
-                                        data-total-harga="{{ $stock->total_harga }}"
-                                        data-tipe="{{ $stock->tipe }}"
+                                        data-id="{{ $item->getKey() }}"
+                                        data-nama="{{ $item->nama_barang }}"
+                                        data-stok="{{ $item->stok }}"
+                                        data-harga="{{ $item->harga }}"
+                                        data-tipe="{{ $item->tipe }}"
                                     >
                                         Update
                                     </button>
-                                    <form method="POST" action="{{ route('stock.destroy', $stock->getKey()) }}">
+                                    <form method="POST" action="{{ route('items.destroy', $item->getKey()) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this stock?')">Delete</button>
+                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this item?')">Delete</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6">No stock found.</td>
+                            <td colspan="5">No items found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
-            {{ $stocks->links() }}
+            {{ $items->links() }}
         </div>
     </main>
 
     <div class="modal-backdrop" id="modalBackdrop">
         <div class="modal" role="dialog" aria-modal="true">
             <header>
-                <h2 id="modalTitle">Add Stock</h2>
+                <h2 id="modalTitle">Add Item</h2>
                 <button class="btn" type="button" id="modalClose">Close</button>
             </header>
             <form method="POST" id="modalForm">
                 @csrf
                 <input type="hidden" name="_method" id="modalMethod" value="POST" />
                 <div>
-                    <label for="modalIdBarang">ID Barang</label>
-                    <input id="modalIdBarang" name="id_barang" type="text" list="barangList" required />
-                    <datalist id="barangList">
-                        @foreach ($barangs as $barang)
-                            <option value="{{ $barang->id_barang }}" label="{{ $barang->nama_barang }}"></option>
-                        @endforeach
-                    </datalist>
+                    <label for="modalNama">Nama Barang</label>
+                    <input id="modalNama" name="nama_barang" type="text" required />
                 </div>
                 <div>
-                    <label for="modalJumlah">Jumlah</label>
-                    <input id="modalJumlah" name="jumlah" type="number" min="0" required />
+                    <label for="modalStok">Stok</label>
+                    <input id="modalStok" name="stok" type="number" min="0" required />
                 </div>
                 <div>
-                    <label for="modalHargaSatuan">Harga Satuan</label>
-                    <input id="modalHargaSatuan" name="harga_satuan" type="number" min="0" required />
-                </div>
-                <div>
-                    <label for="modalTotalHarga">Total Harga</label>
-                    <input id="modalTotalHarga" name="total_harga" type="number" min="0" required />
+                    <label for="modalHarga">Harga</label>
+                    <input id="modalHarga" name="harga" type="number" min="0" required />
                 </div>
                 <div>
                     <label for="modalTipe">Tipe</label>
-                    <select id="modalTipe" name="tipe" required>
+                    <select id="modalTipe" name="tipe">
                         <option value="" disabled selected>-- Select Tipe --</option>
-                        <option value="in">Stock In</option>
-                        <option value="out">Stock Out</option>
+                        @foreach ($types as $type)
+                            <option value="{{ $type->tipe }}">{{ $type->tipe }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="actions">
@@ -392,32 +381,29 @@
     const modalForm = document.getElementById('modalForm');
     const modalTitle = document.getElementById('modalTitle');
     const modalMethod = document.getElementById('modalMethod');
-    const modalIdBarang = document.getElementById('modalIdBarang');
-    const modalJumlah = document.getElementById('modalJumlah');
-    const modalHargaSatuan = document.getElementById('modalHargaSatuan');
-    const modalTotalHarga = document.getElementById('modalTotalHarga');
+    const modalNama = document.getElementById('modalNama');
+    const modalStok = document.getElementById('modalStok');
+    const modalHarga = document.getElementById('modalHarga');
     const modalTipe = document.getElementById('modalTipe');
     const searchInput = document.getElementById('searchInput');
     const searchForm = document.getElementById('searchForm');
 
     const openModal = (mode, data = {}) => {
         if (mode === 'add') {
-            modalTitle.textContent = 'Add Stock';
-            modalForm.action = "{{ route('stock.store') }}";
+            modalTitle.textContent = 'Add Item';
+            modalForm.action = "{{ route('items.store') }}";
             modalMethod.value = 'POST';
-            modalIdBarang.value = '';
-            modalJumlah.value = '';
-            modalHargaSatuan.value = '';
-            modalTotalHarga.value = '';
+            modalNama.value = '';
+            modalStok.value = '';
+            modalHarga.value = '';
             modalTipe.value = '';
         } else {
-            modalTitle.textContent = 'Update Stock';
-            modalForm.action = "{{ url('/stock') }}/" + data.id;
+            modalTitle.textContent = 'Update Item';
+            modalForm.action = "{{ url('/items') }}/" + data.id;
             modalMethod.value = 'PUT';
-            modalIdBarang.value = data.idBarang || '';
-            modalJumlah.value = data.jumlah || '';
-            modalHargaSatuan.value = data.hargaSatuan || '';
-            modalTotalHarga.value = data.totalHarga || '';
+            modalNama.value = data.nama || '';
+            modalStok.value = data.stok || '';
+            modalHarga.value = data.harga || '';
             modalTipe.value = data.tipe || '';
         }
         backdrop.style.display = 'flex';
@@ -432,10 +418,9 @@
             }
             openModal('update', {
                 id: btn.getAttribute('data-id'),
-                idBarang: btn.getAttribute('data-id-barang'),
-                jumlah: btn.getAttribute('data-jumlah'),
-                hargaSatuan: btn.getAttribute('data-harga-satuan'),
-                totalHarga: btn.getAttribute('data-total-harga'),
+                nama: btn.getAttribute('data-nama'),
+                stok: btn.getAttribute('data-stok'),
+                harga: btn.getAttribute('data-harga'),
                 tipe: btn.getAttribute('data-tipe'),
             });
         });

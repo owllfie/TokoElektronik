@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Toko Elektronik | Stock')
+@section('title', 'Toko Elektronik | Users')
 @section('brand_mark', 'E')
 @section('brand_name', 'Electro')
 
@@ -150,6 +150,15 @@
         vertical-align: top;
     }
 
+    code {
+        font-size: 12px;
+        background: #f4f4f4;
+        padding: 4px 6px;
+        border-radius: 8px;
+        display: inline-block;
+        word-break: break-all;
+    }
+
     .actions {
         display: flex;
         gap: 8px;
@@ -270,12 +279,12 @@
 @section('content')
     <main>
         <div class="panel">
-            <h1>Stock</h1>
+            <h1>User list</h1>
             <div class="toolbar">
-                <form class="search" method="GET" action="{{ route('stock') }}" id="searchForm">
-                    <input type="text" name="q" placeholder="Search stock..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
+                <form class="search" method="GET" action="{{ route('users') }}" id="searchForm">
+                    <input type="text" name="q" placeholder="Search users..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
                 </form>
-                <button class="add-btn" type="button" data-modal="add">Add Stock</button>
+                <button class="add-btn" type="button" data-modal="add">Add User</button>
             </div>
             @if(session('status'))
                 <p>{{ session('status') }}</p>
@@ -290,92 +299,78 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID Barang</th>
-                        <th>Jumlah</th>
-                        <th>Harga Satuan</th>
-                        <th>Total Harga</th>
-                        <th>Tipe</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($stocks as $stock)
+                    @forelse ($users as $user)
                         <tr>
-                            <td>{{ $stock->id_barang }}</td>
-                            <td>{{ $stock->jumlah }}</td>
-                            <td>{{ $stock->harga_satuan }}</td>
-                            <td>{{ $stock->total_harga }}</td>
-                            <td>{{ $stock->tipe }}</td>
+                            <td>{{ $user->username }}</td>
+                            <td>{{ $user->email }}</td>
+                            <td>{{ $user->role_name ?? '-' }}</td>
                             <td>
                                 <div class="actions">
                                     <button
                                         class="btn btn-update"
                                         type="button"
                                         data-modal="update"
-                                        data-id="{{ $stock->getKey() }}"
-                                        data-id-barang="{{ $stock->id_barang }}"
-                                        data-jumlah="{{ $stock->jumlah }}"
-                                        data-harga-satuan="{{ $stock->harga_satuan }}"
-                                        data-total-harga="{{ $stock->total_harga }}"
-                                        data-tipe="{{ $stock->tipe }}"
+                                        data-id="{{ $user->getKey() }}"
+                                        data-username="{{ $user->username }}"
+                                        data-email="{{ $user->email }}"
+                                        data-role="{{ $user->role }}"
                                     >
                                         Update
                                     </button>
-                                    <form method="POST" action="{{ route('stock.destroy', $stock->getKey()) }}">
+                                    <form method="POST" action="{{ route('users.destroy', $user->getKey()) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this stock?')">Delete</button>
+                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this user?')">Delete</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6">No stock found.</td>
+                            <td colspan="4">No users found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
-            {{ $stocks->links() }}
+            {{ $users->links() }}
         </div>
     </main>
 
     <div class="modal-backdrop" id="modalBackdrop">
         <div class="modal" role="dialog" aria-modal="true">
             <header>
-                <h2 id="modalTitle">Add Stock</h2>
+                <h2 id="modalTitle">Add User</h2>
                 <button class="btn" type="button" id="modalClose">Close</button>
             </header>
             <form method="POST" id="modalForm">
                 @csrf
                 <input type="hidden" name="_method" id="modalMethod" value="POST" />
                 <div>
-                    <label for="modalIdBarang">ID Barang</label>
-                    <input id="modalIdBarang" name="id_barang" type="text" list="barangList" required />
-                    <datalist id="barangList">
-                        @foreach ($barangs as $barang)
-                            <option value="{{ $barang->id_barang }}" label="{{ $barang->nama_barang }}"></option>
+                    <label for="modalUsername">Username</label>
+                    <input id="modalUsername" name="username" type="text" required />
+                </div>
+                <div>
+                    <label for="modalEmail">Email</label>
+                    <input id="modalEmail" name="email" type="email" required />
+                </div>
+                <div>
+                    <label for="modalPassword">Password</label>
+                    <input id="modalPassword" name="password" type="password" />
+                </div>
+                <div>
+                    <label for="modalRole">Role</label>
+                    <select id="modalRole" name="role">
+                        <option value="" disabled selected>-- Select Role --</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->id_role }}">{{ $role->role }}</option>
                         @endforeach
-                    </datalist>
-                </div>
-                <div>
-                    <label for="modalJumlah">Jumlah</label>
-                    <input id="modalJumlah" name="jumlah" type="number" min="0" required />
-                </div>
-                <div>
-                    <label for="modalHargaSatuan">Harga Satuan</label>
-                    <input id="modalHargaSatuan" name="harga_satuan" type="number" min="0" required />
-                </div>
-                <div>
-                    <label for="modalTotalHarga">Total Harga</label>
-                    <input id="modalTotalHarga" name="total_harga" type="number" min="0" required />
-                </div>
-                <div>
-                    <label for="modalTipe">Tipe</label>
-                    <select id="modalTipe" name="tipe" required>
-                        <option value="" disabled selected>-- Select Tipe --</option>
-                        <option value="in">Stock In</option>
-                        <option value="out">Stock Out</option>
                     </select>
                 </div>
                 <div class="actions">
@@ -392,33 +387,31 @@
     const modalForm = document.getElementById('modalForm');
     const modalTitle = document.getElementById('modalTitle');
     const modalMethod = document.getElementById('modalMethod');
-    const modalIdBarang = document.getElementById('modalIdBarang');
-    const modalJumlah = document.getElementById('modalJumlah');
-    const modalHargaSatuan = document.getElementById('modalHargaSatuan');
-    const modalTotalHarga = document.getElementById('modalTotalHarga');
-    const modalTipe = document.getElementById('modalTipe');
+    const modalUsername = document.getElementById('modalUsername');
+    const modalEmail = document.getElementById('modalEmail');
+    const modalPassword = document.getElementById('modalPassword');
+    const modalRole = document.getElementById('modalRole');
     const searchInput = document.getElementById('searchInput');
     const searchForm = document.getElementById('searchForm');
 
     const openModal = (mode, data = {}) => {
+        modalPassword.value = '';
         if (mode === 'add') {
-            modalTitle.textContent = 'Add Stock';
-            modalForm.action = "{{ route('stock.store') }}";
+            modalTitle.textContent = 'Add User';
+            modalForm.action = "{{ route('users.store') }}";
             modalMethod.value = 'POST';
-            modalIdBarang.value = '';
-            modalJumlah.value = '';
-            modalHargaSatuan.value = '';
-            modalTotalHarga.value = '';
-            modalTipe.value = '';
+            modalUsername.value = '';
+            modalEmail.value = '';
+            modalRole.value = '';
+            modalPassword.required = true;
         } else {
-            modalTitle.textContent = 'Update Stock';
-            modalForm.action = "{{ url('/stock') }}/" + data.id;
+            modalTitle.textContent = 'Update User';
+            modalForm.action = "{{ url('/users') }}/" + data.id;
             modalMethod.value = 'PUT';
-            modalIdBarang.value = data.idBarang || '';
-            modalJumlah.value = data.jumlah || '';
-            modalHargaSatuan.value = data.hargaSatuan || '';
-            modalTotalHarga.value = data.totalHarga || '';
-            modalTipe.value = data.tipe || '';
+            modalUsername.value = data.username || '';
+            modalEmail.value = data.email || '';
+            modalRole.value = data.role || '';
+            modalPassword.required = false;
         }
         backdrop.style.display = 'flex';
     };
@@ -432,11 +425,9 @@
             }
             openModal('update', {
                 id: btn.getAttribute('data-id'),
-                idBarang: btn.getAttribute('data-id-barang'),
-                jumlah: btn.getAttribute('data-jumlah'),
-                hargaSatuan: btn.getAttribute('data-harga-satuan'),
-                totalHarga: btn.getAttribute('data-total-harga'),
-                tipe: btn.getAttribute('data-tipe'),
+                username: btn.getAttribute('data-username'),
+                email: btn.getAttribute('data-email'),
+                role: btn.getAttribute('data-role'),
             });
         });
     });

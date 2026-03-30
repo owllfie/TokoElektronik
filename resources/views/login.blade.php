@@ -155,16 +155,15 @@
     <div class="frame">
         <section class="poster">
             <div>
-                <div class="badge">Secure Access</div>
-                <h1>Welcome back to Toko Elektronik.</h1>
+                <h1>Welcome back to Electro.</h1>
                 <p>
-                    Sign in to monitor store activity, coordinate restocks, and keep customers moving.
+                    Sign in to monitor store activity, coordinate restocks, and check monthly reports.
                     Your retail cockpit is waiting.
                 </p>
             </div>
             <div>
                 <strong>Need help?</strong>
-                <p>Contact the ops desk for access or reset.</p>
+                <p>Contact admins for access or reset.</p>
             </div>
         </section>
 

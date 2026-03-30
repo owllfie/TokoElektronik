@@ -1,378 +1,353 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Toko Elektronik | Home</title>
-    <style>
-        :root {
-            --ink: #1b1b1b;
-            --muted: #6b6b6b;
-            --accent: #0f6b5c;
-            --accent-2: #f0b429;
-            --surface: #fff7ee;
-            --shadow: rgba(15, 34, 29, 0.12);
-        }
+@extends('layouts.app')
 
-        * {
-            box-sizing: border-box;
-        }
+@section('title', 'Toko Elektronik | Home')
+@section('brand_name', 'Electro')
+@section('brand_mark', 'E')
 
-        body {
-            margin: 0;
-            font-family: "Calibri", "Segoe UI", sans-serif;
-            color: var(--ink);
-            background:
-                radial-gradient(circle at 15% 20%, rgba(240, 180, 41, 0.2), transparent 50%),
-                radial-gradient(circle at 85% 10%, rgba(15, 107, 92, 0.18), transparent 55%),
-                linear-gradient(120deg, #fef4e8 0%, #f6f1ff 40%, #f0f9f6 100%);
-            min-height: 100vh;
-        }
+@section('styles')
+    :root {
+        --ink: #1b1b1b;
+        --muted: #6b6b6b;
+        --accent: #0f6b5c;
+        --accent-2: #f0b429;
+        --surface: #fff7ee;
+        --shadow: rgba(15, 34, 29, 0.12);
+    }
 
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: "Calibri", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+            radial-gradient(circle at 15% 20%, rgba(240, 180, 41, 0.2), transparent 50%),
+            radial-gradient(circle at 85% 10%, rgba(15, 107, 92, 0.18), transparent 55%),
+            linear-gradient(120deg, #fef4e8 0%, #f6f1ff 40%, #f0f9f6 100%);
+        min-height: 100vh;
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: 100vh;
+        transition: grid-template-columns 0.2s ease;
+    }
+
+    aside {
+        padding: 32px 20px;
+        background: rgba(255, 255, 255, 0.6);
+        border-right: 1px solid rgba(15, 107, 92, 0.12);
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        backdrop-filter: blur(8px);
+    }
+
+    .layout.collapsed {
+        grid-template-columns: 80px 1fr;
+    }
+
+    .layout.collapsed aside {
+        padding: 24px 12px;
+    }
+
+    .toggle {
+        border: none;
+        background: rgba(15, 107, 92, 0.12);
+        color: var(--ink);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .layout.collapsed .brand,
+    .layout.collapsed .side-nav a,
+    .layout.collapsed .side-nav button {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .layout.collapsed .brand div,
+    .layout.collapsed .side-nav span,
+    .layout.collapsed small {
+        display: none;
+    }
+
+    .side-nav {
+        display: grid;
+        gap: 12px;
+        font-size: 15px;
+    }
+
+    .side-nav a,
+    .side-nav button {
+        text-decoration: none;
+        color: var(--ink);
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(15, 107, 92, 0.18);
+        font-family: inherit;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    header {
+        padding: 32px 6vw 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .brand-mark {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #0f6b5c, #0d3d36);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 20px;
+        box-shadow: 0 12px 30px var(--shadow);
+    }
+
+    nav {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        font-size: 15px;
+    }
+
+    nav a,
+    .nav-button {
+        text-decoration: none;
+        color: var(--ink);
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(15, 107, 92, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        font-family: inherit;
+        font-size: 15px;
+        cursor: pointer;
+    }
+
+    nav a:hover,
+    .nav-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px var(--shadow);
+    }
+
+    .hero {
+        padding: 24px 6vw 48px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 28px;
+        align-items: center;
+    }
+
+    .hero-card {
+        background: rgba(255, 255, 255, 0.78);
+        border-radius: 28px;
+        padding: 32px;
+        box-shadow: 0 28px 60px var(--shadow);
+        border: 1px solid rgba(15, 107, 92, 0.12);
+        backdrop-filter: blur(8px);
+    }
+
+    .hero h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 3vw, 3rem);
+        line-height: 1.1;
+        font-family: "Georgia", "Times New Roman", serif;
+    }
+
+    .hero p {
+        margin: 0 0 20px;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+
+    .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .cta {
+        padding: 12px 18px;
+        border-radius: 12px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(15, 107, 92, 0.25);
+    }
+
+    .cta.secondary {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        box-shadow: none;
+    }
+
+    .signal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .signal {
+        background: #fff;
+        border-radius: 18px;
+        padding: 18px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .signal h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+    }
+
+    .signal span {
+        font-size: 26px;
+        font-weight: 700;
+    }
+
+    .banner {
+        padding: 18px 24px;
+        border-radius: 16px;
+        margin-top: 22px;
+        background: linear-gradient(135deg, rgba(15, 107, 92, 0.2), rgba(240, 180, 41, 0.15));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .banner p {
+        margin: 0;
+        color: var(--ink);
+        font-weight: 600;
+    }
+
+    .panel {
+        background: #fff;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 20px 40px var(--shadow);
+    }
+
+    .panel h2 {
+        margin: 0 0 16px;
+        font-size: 20px;
+    }
+
+    .chart-card {
+        margin-top: 20px;
+        padding: 18px;
+        border-radius: 18px;
+        background: #f4f4f4;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .chart-line {
+        width: 100%;
+        height: 220px;
+        display: block;
+    }
+
+    .list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: #f7f7f7;
+    }
+
+    .status {
+        background: var(--accent-2);
+        color: #332300;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
         .layout {
-            display: grid;
-            grid-template-columns: 240px 1fr;
-            min-height: 100vh;
-            transition: grid-template-columns 0.2s ease;
+            grid-template-columns: 1fr;
         }
 
         aside {
-            padding: 32px 20px;
-            background: rgba(255, 255, 255, 0.6);
-            border-right: 1px solid rgba(15, 107, 92, 0.12);
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            backdrop-filter: blur(8px);
-        }
-
-        .layout.collapsed {
-            grid-template-columns: 80px 1fr;
-        }
-
-        .layout.collapsed aside {
-            padding: 24px 12px;
-        }
-
-        .toggle {
-            border: none;
-            background: rgba(15, 107, 92, 0.12);
-            color: var(--ink);
-            border-radius: 10px;
-            padding: 8px 10px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: left;
-        }
-
-        .layout.collapsed .brand,
-        .layout.collapsed .side-nav a,
-        .layout.collapsed .side-nav button {
-            justify-content: center;
-            text-align: center;
-        }
-
-        .layout.collapsed .brand div,
-        .layout.collapsed .side-nav span,
-        .layout.collapsed small {
-            display: none;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .side-nav {
-            display: grid;
-            gap: 12px;
-            font-size: 15px;
+            grid-auto-flow: column;
+            grid-template-columns: unset;
         }
+    }
 
-        .side-nav a,
-        .side-nav button {
-            text-decoration: none;
-            color: var(--ink);
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(15, 107, 92, 0.18);
-            font-family: inherit;
-            cursor: pointer;
-            text-align: left;
-        }
-
+    @media (max-width: 700px) {
         header {
-            padding: 32px 6vw 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            font-family: "Georgia", "Times New Roman", serif;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .brand-mark {
-            width: 46px;
-            height: 46px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #0f6b5c, #0d3d36);
-            display: grid;
-            place-items: center;
-            color: #fff;
-            font-size: 20px;
-            box-shadow: 0 12px 30px var(--shadow);
-        }
-
-        nav {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            font-size: 15px;
-        }
-
-        nav a,
-        .nav-button {
-            text-decoration: none;
-            color: var(--ink);
-            padding: 10px 16px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(15, 107, 92, 0.2);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            font-family: inherit;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        nav a:hover,
-        .nav-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px var(--shadow);
-        }
-
-        .hero {
-            padding: 24px 6vw 48px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 28px;
-            align-items: center;
-        }
-
-        .hero-card {
-            background: rgba(255, 255, 255, 0.78);
-            border-radius: 28px;
-            padding: 32px;
-            box-shadow: 0 28px 60px var(--shadow);
-            border: 1px solid rgba(15, 107, 92, 0.12);
-            backdrop-filter: blur(8px);
-        }
-
-        .hero h1 {
-            margin: 0 0 12px;
-            font-size: clamp(2rem, 3vw, 3rem);
-            line-height: 1.1;
-            font-family: "Georgia", "Times New Roman", serif;
-        }
-
-        .hero p {
-            margin: 0 0 20px;
-            color: var(--muted);
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        .cta-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .cta {
-            padding: 12px 18px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            background: var(--accent);
-            color: #fff;
-            box-shadow: 0 12px 24px rgba(15, 107, 92, 0.25);
-        }
-
-        .cta.secondary {
-            background: transparent;
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            box-shadow: none;
+            flex-direction: column;
+            align-items: flex-start;
         }
 
         .signal-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .signal {
-            background: #fff;
-            border-radius: 18px;
-            padding: 18px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .signal h3 {
-            margin: 0 0 6px;
-            font-size: 16px;
-        }
-
-        .signal span {
-            font-size: 26px;
-            font-weight: 700;
+            grid-template-columns: 1fr;
         }
 
         .banner {
-            padding: 18px 24px;
-            border-radius: 16px;
-            margin-top: 22px;
-            background: linear-gradient(135deg, rgba(15, 107, 92, 0.2), rgba(240, 180, 41, 0.15));
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
+            flex-direction: column;
+            align-items: flex-start;
         }
+    }
+@endsection
 
-        .banner p {
-            margin: 0;
-            color: var(--ink);
-            font-weight: 600;
-        }
-
-        .panel {
-            background: #fff;
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: 0 20px 40px var(--shadow);
-        }
-
-        .panel h2 {
-            margin: 0 0 16px;
-            font-size: 20px;
-        }
-
-        .chart-card {
-            margin-top: 20px;
-            padding: 18px;
-            border-radius: 18px;
-            background: #f4f4f4;
-            border: 1px solid rgba(0, 0, 0, 0.06);
-        }
-
-        .chart-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .chart-line {
-            width: 100%;
-            height: 220px;
-            display: block;
-        }
-
-        .list {
-            display: grid;
-            gap: 12px;
-        }
-
-        .list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-radius: 14px;
-            background: #f7f7f7;
-        }
-
-        .status {
-            background: var(--accent-2);
-            color: #332300;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-        }
-
-        @media (max-width: 900px) {
-            .layout {
-                grid-template-columns: 1fr;
-            }
-
-            aside {
-                flex-direction: row;
-                align-items: center;
-                justify-content: space-between;
-            }
-
-            .side-nav {
-                grid-auto-flow: column;
-                grid-template-columns: unset;
-            }
-        }
-
-        @media (max-width: 700px) {
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .signal-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .banner {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-    </style>
-</head>
-<body>
-    @php($user = session('user'))
-    <div class="layout">
-        <aside>
-            <div class="brand">
-                <div class="brand-mark">TE</div>
-                <div>
-                    <div>Toko Elektronik</div>
-                </div>
-            </div>
-            <nav class="side-nav">
-                <button class="toggle" type="button" id="toggleSidebar">Menu</button>
-                <a href="/home"><span>Dashboard</span></a>
-                <a href="/report"><span>Report</span></a>
-                <a href="/stock"><span>Stock</span></a>
-                @if($user)
-                    <form method="POST" action="/logout">
-                        @csrf
-                        <button type="submit">Logout</button>
-                    </form>
-                @else
-                    <a href="/login">Login</a>
-                @endif
-            </nav>
-        </aside>
-
-        <main class="hero">
-            <section class="panel">
-            <h2>Today at a glance</h2>
+@section('content')
+    <main class="hero">
+        <section class="panel">
+            <h2>Statistics</h2>
             <div class="signal-grid">
                 <div class="signal">
                     <h3>Units sold</h3>
@@ -458,15 +433,6 @@
                     <span class="status">Queued</span>
                 </div>
             </div>
-            </section>
-        </main>
-    </div>
-    <script>
-        const layout = document.querySelector('.layout');
-        const toggle = document.getElementById('toggleSidebar');
-        toggle.addEventListener('click', () => {
-            layout.classList.toggle('collapsed');
-        });
-    </script>
-</body>
-</html>
+        </section>
+    </main>
+@endsection
