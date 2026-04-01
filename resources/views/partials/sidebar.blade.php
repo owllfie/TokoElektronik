@@ -1,9 +1,7 @@
 @php
     $user = session('user');
     $role = (int) ($user['role'] ?? 0);
-    $canAccessInventory = in_array($role, [1, 3, 4], true);
-    $canAccessReport = in_array($role, [2, 3, 4], true);
-    $canAccessUsers = in_array($role, [3, 4], true);
+    $accessiblePageKeys = $accessiblePageKeys ?? [];
     $homeRoute = match ($role) {
         1, 2, 3, 4 => route('home'),
         default => route('landing'),
@@ -20,16 +18,25 @@
         @if($user)
             <button class="toggle" type="button" id="toggleSidebar">Menu</button>
             <a href="{{ route('profile') }}"><span>Profile</span></a>
-            @if($canAccessUsers)
+            @if(in_array('users', $accessiblePageKeys, true))
                 <a href="{{ route('users') }}"><span>Users</span></a>
             @endif
-            @if($canAccessInventory)
+            @if(in_array('items', $accessiblePageKeys, true))
                 <a href="{{ route('items') }}"><span>Items</span></a>
+            @endif
+            @if(in_array('types', $accessiblePageKeys, true))
                 <a href="{{ route('types') }}"><span>Item Types</span></a>
+            @endif
+            @if(in_array('stock', $accessiblePageKeys, true))
                 <a href="{{ route('stock') }}"><span>Stock</span></a>
             @endif
-            @if($canAccessReport)
+            @if(in_array('report', $accessiblePageKeys, true))
                 <a href="{{ route('report') }}"><span>Report</span></a>
+            @endif
+            @if($role === 4)
+                <a href="{{ route('admin.settings') }}"><span>Web Settings</span></a>
+                <a href="{{ route('admin.access') }}"><span>Manage Access</span></a>
+                <a href="{{ route('admin.backup') }}"><span>Backup Database</span></a>
             @endif
             <form method="POST" action="/logout">
                 @csrf

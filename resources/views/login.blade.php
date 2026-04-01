@@ -144,6 +144,43 @@
             font-size: 14px;
         }
 
+        .challenge {
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(31, 90, 95, 0.06);
+            display: grid;
+            gap: 10px;
+        }
+
+        .challenge.hidden {
+            display: none;
+        }
+
+        .challenge-label {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--accent-2);
+        }
+
+        .challenge-question {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .captcha-error {
+            color: #b42318;
+            font-size: 13px;
+        }
+
+        .captcha-status {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0;
+        }
+
         @media (max-width: 720px) {
             .poster {
                 order: 2;
@@ -187,10 +224,99 @@
                     <small style="color: #b42318;">{{ $message }}</small>
                 @enderror
             </div>
+            <input type="hidden" name="captcha_mode" id="captchaMode" value="{{ old('captcha_mode', 'math') }}" />
+            <div class="challenge" id="captchaStatusBox">
+                <span class="challenge-label">Security Check</span>
+                <p class="captcha-status" id="captchaStatus">Checking internet connection for reCAPTCHA...</p>
+                @error('captcha')
+                    <small class="captcha-error">{{ $message }}</small>
+                @enderror
+            </div>
+            <div class="challenge hidden" id="recaptchaChallenge">
+                <span class="challenge-label">reCAPTCHA</span>
+                <div id="recaptchaContainer"></div>
+            </div>
+            <div class="challenge hidden" id="mathChallenge">
+                <span class="challenge-label">Math Question</span>
+                <div class="challenge-question">{{ $mathQuestion }}</div>
+                <div>
+                    <label for="math_answer">Answer</label>
+                    <input id="math_answer" name="math_answer" type="text" inputmode="numeric" value="{{ old('math_answer') }}" autocomplete="off" />
+                    @error('math_answer')
+                        <small class="captcha-error">{{ $message }}</small>
+                    @enderror
+                </div>
+            </div>
             <div class="actions">
                 <button class="button" type="submit">Sign In</button>
             </div>
         </form>
     </div>
+    <script>
+        const captchaModeInput = document.getElementById('captchaMode');
+        const captchaStatus = document.getElementById('captchaStatus');
+        const recaptchaChallenge = document.getElementById('recaptchaChallenge');
+        const mathChallenge = document.getElementById('mathChallenge');
+        const mathAnswerInput = document.getElementById('math_answer');
+        const recaptchaSiteKey = @json($recaptchaSiteKey);
+        let recaptchaWidgetId = null;
+
+        const useMathFallback = (message) => {
+            captchaModeInput.value = 'math';
+            mathChallenge.classList.remove('hidden');
+            recaptchaChallenge.classList.add('hidden');
+            captchaStatus.textContent = message;
+            if (mathAnswerInput) {
+                mathAnswerInput.required = true;
+            }
+        };
+
+        const useRecaptcha = () => {
+            if (!window.grecaptcha || !recaptchaSiteKey) {
+                useMathFallback('reCAPTCHA is unavailable. Solve the math question to continue.');
+                return;
+            }
+
+            captchaModeInput.value = 'recaptcha';
+            recaptchaChallenge.classList.remove('hidden');
+            mathChallenge.classList.add('hidden');
+            if (mathAnswerInput) {
+                mathAnswerInput.required = false;
+                mathAnswerInput.value = '';
+            }
+            captchaStatus.textContent = 'reCAPTCHA is active.';
+
+            if (recaptchaWidgetId === null) {
+                recaptchaWidgetId = window.grecaptcha.render('recaptchaContainer', {
+                    sitekey: recaptchaSiteKey,
+                });
+            }
+        };
+
+        window.onRecaptchaLoaded = () => {
+            useRecaptcha();
+        };
+
+        const loadRecaptcha = () => {
+            if (!recaptchaSiteKey || !navigator.onLine) {
+                useMathFallback('No internet detected. Solve the math question to continue.');
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoaded&render=explicit';
+            script.async = true;
+            script.defer = true;
+            script.onerror = () => {
+                useMathFallback('reCAPTCHA could not be loaded. Solve the math question to continue.');
+            };
+            document.head.appendChild(script);
+        };
+
+        loadRecaptcha();
+        window.addEventListener('offline', () => {
+            useMathFallback('Internet connection lost. Solve the math question to continue.');
+        });
+    </script>
 </body>
 </html>

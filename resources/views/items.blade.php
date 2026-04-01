@@ -129,6 +129,64 @@
         gap: 16px;
     }
 
+    .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tab-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 107, 92, 0.18);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 700;
+        background: #fff;
+    }
+
+    .tab-link.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+    }
+
+    .search {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex: 1 1 260px;
+    }
+
+    .search input {
+        width: min(360px, 100%);
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        font-family: inherit;
+    }
+
+    .add-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;
@@ -177,37 +235,10 @@
         border: 1px solid rgba(180, 35, 24, 0.25);
     }
 
-    .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .search {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex: 1 1 260px;
-    }
-
-    .search input {
-        width: min(360px, 100%);
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-        font-family: inherit;
-    }
-
-    .add-btn {
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: none;
-        background: var(--accent);
-        color: #fff;
-        font-weight: 700;
-        cursor: pointer;
+    .btn-restore {
+        background: rgba(240, 180, 41, 0.18);
+        color: #6a4b00;
+        border: 1px solid rgba(240, 180, 41, 0.28);
     }
 
     .modal-backdrop {
@@ -268,14 +299,44 @@
 @endsection
 
 @section('content')
+    @php
+        $formatHistoryState = function (?array $state) {
+            if (empty($state)) {
+                return '-';
+            }
+
+            return collect($state)
+                ->only(['nama_barang', 'stok', 'harga', 'tipe'])
+                ->map(function ($value, $key) {
+                    $label = match ($key) {
+                        'nama_barang' => 'Nama',
+                        'stok' => 'Stok',
+                        'harga' => 'Harga',
+                        'tipe' => 'Tipe',
+                        default => ucfirst(str_replace('_', ' ', $key)),
+                    };
+
+                    return $label . ': ' . ($value === null || $value === '' ? '-' : $value);
+                })
+                ->implode(' | ');
+        };
+    @endphp
     <main>
         <div class="panel">
             <h1>Items</h1>
             <div class="toolbar">
                 <form class="search" method="GET" action="{{ route('items') }}" id="searchForm">
+                    <input type="hidden" name="tab" value="{{ $tab }}" />
                     <input type="text" name="q" placeholder="Search items..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
                 </form>
-                <button class="add-btn" type="button" data-modal="add">Add Item</button>
+                @if ($tab === 'now')
+                    <button class="add-btn" type="button" data-modal="add">Add Item</button>
+                @endif
+            </div>
+            <div class="tabs">
+                <a class="tab-link {{ $tab === 'now' ? 'active' : '' }}" href="{{ route('items', ['tab' => 'now', 'q' => $search]) }}">Now</a>
+                <a class="tab-link {{ $tab === 'trash' ? 'active' : '' }}" href="{{ route('items', ['tab' => 'trash', 'q' => $search]) }}">Trash Bin</a>
+                <a class="tab-link {{ $tab === 'history' ? 'active' : '' }}" href="{{ route('items', ['tab' => 'history', 'q' => $search]) }}">Update History</a>
             </div>
             @if(session('status'))
                 <p>{{ session('status') }}</p>
@@ -287,53 +348,109 @@
                     @endforeach
                 </div>
             @endif
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nama Barang</th>
-                        <th>Stok</th>
-                        <th>Harga</th>
-                        <th>Tipe</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($items as $item)
+
+            @if ($tab === 'history')
+                <table>
+                    <thead>
                         <tr>
-                            <td>{{ $item->nama_barang }}</td>
-                            <td>{{ $item->stok }}</td>
-                            <td>{{ $item->harga }}</td>
-                            <td>{{ $item->tipe ?? '-' }}</td>
-                            <td>
-                                <div class="actions">
-                                    <button
-                                        class="btn btn-update"
-                                        type="button"
-                                        data-modal="update"
-                                        data-id="{{ $item->getKey() }}"
-                                        data-nama="{{ $item->nama_barang }}"
-                                        data-stok="{{ $item->stok }}"
-                                        data-harga="{{ $item->harga }}"
-                                        data-tipe="{{ $item->tipe }}"
-                                    >
-                                        Update
-                                    </button>
-                                    <form method="POST" action="{{ route('items.destroy', $item->getKey()) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this item?')">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th>Record ID</th>
+                            <th>Before</th>
+                            <th>After</th>
+                            <th>Changed At</th>
+                            <th>Action</th>
                         </tr>
-                    @empty
+                    </thead>
+                    <tbody>
+                        @forelse ($histories as $history)
+                            <tr>
+                                <td>#{{ $history->record_id }}</td>
+                                <td>{{ $formatHistoryState($history->before_state) }}</td>
+                                <td>{{ $formatHistoryState($history->after_state) }}</td>
+                                <td>{{ optional($history->created_at)->format('d M Y H:i') ?? '-' }}</td>
+                                <td>
+                                    <div class="actions">
+                                        <form method="POST" action="{{ route('items.history.revert', $history->id) }}">
+                                            @csrf
+                                            <button class="btn btn-update" type="submit" onclick="return confirm('Revert this update?')">Revert</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5">No update history found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                @include('partials.pagination', ['paginator' => $histories])
+            @else
+                <table>
+                    <thead>
                         <tr>
-                            <td colspan="5">No items found.</td>
+                            <th>Nama Barang</th>
+                            <th>Stok</th>
+                            <th>Harga</th>
+                            <th>Tipe</th>
+                            @if ($tab === 'trash')
+                                <th>Deleted At</th>
+                            @endif
+                            <th>Action</th>
                         </tr>
-                    @endforelse
-                </tbody>
-            </table>
-            @include('partials.pagination', ['paginator' => $items])
+                    </thead>
+                    <tbody>
+                        @forelse ($items as $item)
+                            <tr>
+                                <td>{{ $item->nama_barang }}</td>
+                                <td>{{ $item->stok }}</td>
+                                <td>{{ $item->harga }}</td>
+                                <td>{{ $item->tipe ?? '-' }}</td>
+                                @if ($tab === 'trash')
+                                    <td>{{ optional($item->deleted_at)->format('d M Y H:i') ?? '-' }}</td>
+                                @endif
+                                <td>
+                                    <div class="actions">
+                                        @if ($tab === 'now')
+                                            <button
+                                                class="btn btn-update"
+                                                type="button"
+                                                data-modal="update"
+                                                data-id="{{ $item->getKey() }}"
+                                                data-nama="{{ $item->nama_barang }}"
+                                                data-stok="{{ $item->stok }}"
+                                                data-harga="{{ $item->harga }}"
+                                                data-tipe="{{ $item->tipe }}"
+                                            >
+                                                Update
+                                            </button>
+                                            <form method="POST" action="{{ route('items.destroy', $item->getKey()) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-delete" type="submit" onclick="return confirm('Move this item to trash?')">Delete</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('items.restore', $item->getKey()) }}">
+                                                @csrf
+                                                <button class="btn btn-restore" type="submit">Restore</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('items.force-delete', $item->getKey()) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this item permanently?')">Delete Permanently</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="{{ $tab === 'trash' ? 6 : 5 }}">No items found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                @include('partials.pagination', ['paginator' => $items])
+            @endif
         </div>
     </main>
 
@@ -387,8 +504,13 @@
     const modalTipe = document.getElementById('modalTipe');
     const searchInput = document.getElementById('searchInput');
     const searchForm = document.getElementById('searchForm');
+    const modalClose = document.getElementById('modalClose');
 
     const openModal = (mode, data = {}) => {
+        if (!backdrop) {
+            return;
+        }
+
         if (mode === 'add') {
             modalTitle.textContent = 'Add Item';
             modalForm.action = "{{ route('items.store') }}";
@@ -406,6 +528,7 @@
             modalHarga.value = data.harga || '';
             modalTipe.value = data.tipe || '';
         }
+
         backdrop.style.display = 'flex';
     };
 
@@ -426,15 +549,19 @@
         });
     });
 
-    document.getElementById('modalClose').addEventListener('click', () => {
-        backdrop.style.display = 'none';
-    });
-
-    backdrop.addEventListener('click', (event) => {
-        if (event.target === backdrop) {
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
             backdrop.style.display = 'none';
-        }
-    });
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener('click', (event) => {
+            if (event.target === backdrop) {
+                backdrop.style.display = 'none';
+            }
+        });
+    }
 
     if (searchInput && searchForm) {
         let searchTimer;

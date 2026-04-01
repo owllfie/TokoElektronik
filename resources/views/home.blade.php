@@ -212,6 +212,25 @@ box-shadow: none;
 .signal-grid {
 display: grid;
 grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 20px;
+}
+
+.signal-section {
+padding: 18px;
+border-radius: 20px;
+background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 247, 247, 0.95));
+border: 1px solid rgba(15, 107, 92, 0.12);
+box-shadow: 0 18px 36px rgba(15, 34, 29, 0.08);
+}
+
+.signal-section h3 {
+margin: 0 0 14px;
+font-size: 18px;
+}
+
+.signal-section-grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
 gap: 16px;
 }
 
@@ -279,6 +298,88 @@ align-items: center;
 justify-content: space-between;
 gap: 12px;
 margin-bottom: 12px;
+flex-wrap: wrap;
+}
+
+.chart-tabs {
+display: inline-flex;
+gap: 8px;
+padding: 6px;
+border-radius: 999px;
+background: #ffffff;
+border: 1px solid rgba(15, 107, 92, 0.12);
+}
+
+.chart-tab {
+border: none;
+background: transparent;
+padding: 8px 14px;
+border-radius: 999px;
+font-family: inherit;
+font-weight: 700;
+cursor: pointer;
+color: var(--muted);
+}
+
+.chart-tab.is-active {
+background: var(--accent);
+color: #fff;
+}
+
+.chart-panels {
+display: grid;
+gap: 18px;
+}
+
+.chart-panel {
+display: none;
+gap: 16px;
+}
+
+.chart-panel.is-active {
+display: grid;
+}
+
+.chart-meta {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+flex-wrap: wrap;
+}
+
+.chart-meta p {
+margin: 0;
+color: var(--muted);
+}
+
+.chart-split {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 16px;
+}
+
+.chart-box {
+padding: 16px;
+border-radius: 16px;
+background: #ffffff;
+border: 1px solid rgba(15, 107, 92, 0.1);
+}
+
+.chart-box h3 {
+margin: 0 0 4px;
+font-size: 16px;
+}
+
+.chart-box p {
+margin: 0 0 12px;
+color: var(--muted);
+font-size: 13px;
+}
+
+.chart-value-label {
+font-size: 12px;
+fill: #6b6b6b;
 }
 
 .chart-line {
@@ -341,6 +442,14 @@ grid-template-columns: 1fr;
 flex-direction: column;
 align-items: flex-start;
 }
+
+.signal-section-grid {
+grid-template-columns: 1fr;
+}
+
+.chart-split {
+grid-template-columns: 1fr;
+}
 }
 @endsection
 
@@ -354,98 +463,210 @@ align-items: flex-start;
 </main>
 @else
 @php
-$chartWidth = 700;
-$chartHeight = 220;
-$leftPad = 20;
-$rightPad = 20;
-$topPad = 30;
-$bottomPad = 30;
-$usableWidth = $chartWidth - $leftPad - $rightPad;
-$usableHeight = $chartHeight - $topPad - $bottomPad;
-$pointCount = max($chartDays->count() - 1, 1);
+$buildChart = function ($series, $valueKey) {
+    $chartWidth = 700;
+    $chartHeight = 220;
+    $leftPad = 56;
+    $rightPad = 20;
+    $topPad = 30;
+    $bottomPad = 30;
+    $usableWidth = $chartWidth - $leftPad - $rightPad;
+    $usableHeight = $chartHeight - $topPad - $bottomPad;
+    $pointCount = max($series->count() - 1, 1);
+    $maxValue = max($series->max($valueKey), 1);
 
-$chartPoints = $chartDays->map(function ($day, $index) use ($leftPad, $topPad, $usableWidth, $usableHeight, $pointCount, $maxChartValue) {
-$x = $leftPad + (($usableWidth / $pointCount) * $index);
-$y = $topPad + $usableHeight - (($day['value'] / $maxChartValue) * $usableHeight);
+    $points = $series->values()->map(function ($entry, $index) use ($valueKey, $leftPad, $topPad, $usableWidth, $usableHeight, $pointCount, $maxValue) {
+        $x = $leftPad + (($usableWidth / $pointCount) * $index);
+        $y = $topPad + $usableHeight - (($entry[$valueKey] / $maxValue) * $usableHeight);
 
-return [
-'x' => round($x, 2),
-'y' => round($y, 2),
-'label' => $day['label'],
-'value' => $day['value'],
-];
-});
+        return [
+            'x' => round($x, 2),
+            'y' => round($y, 2),
+            'label' => $entry['label'],
+            'value' => $entry[$valueKey],
+        ];
+    });
 
-$linePath = $chartPoints->map(fn ($point, $index) => ($index === 0 ? 'M' : 'L') . $point['x'] . ' ' . $point['y'])->implode(' ');
-$areaPath = $linePath . ' L' . ($chartWidth - $rightPad) . ' ' . ($chartHeight - $bottomPad) . ' L' . $leftPad . ' ' . ($chartHeight - $bottomPad) . ' Z';
-$gridLines = collect(range(0, 3))->map(function ($step) use ($leftPad, $rightPad, $topPad, $usableHeight) {
-return round($topPad + (($usableHeight / 3) * $step), 2);
-});
+    $linePath = $points->map(fn ($point, $index) => ($index === 0 ? 'M' : 'L') . $point['x'] . ' ' . $point['y'])->implode(' ');
+    $areaPath = $linePath . ' L' . ($chartWidth - $rightPad) . ' ' . ($chartHeight - $bottomPad) . ' L' . $leftPad . ' ' . ($chartHeight - $bottomPad) . ' Z';
+    $gridLines = collect(range(0, 3))->map(function ($step) use ($topPad, $usableHeight) {
+        return round($topPad + (($usableHeight / 3) * $step), 2);
+    });
+    $valueLabels = collect(range(0, 3))->map(function ($step) use ($topPad, $usableHeight, $maxValue) {
+        $value = $maxValue - (($maxValue / 3) * $step);
+
+        return [
+            'y' => round($topPad + (($usableHeight / 3) * $step), 2),
+            'value' => number_format(max($value, 0), $maxValue >= 10 ? 0 : 2),
+        ];
+    });
+
+    return [
+        'points' => $points,
+        'linePath' => $linePath,
+        'areaPath' => $areaPath,
+        'gridLines' => $gridLines,
+        'valueLabels' => $valueLabels,
+        'maxValue' => $maxValue,
+    ];
+};
 @endphp
 <main class="hero">
     <section class="panel">
         <h2>Statistics</h2>
         <div class="signal-grid">
-            <div class="signal">
-                <h3>Total Records</h3>
-                <span>{{ number_format($summary->total_records ?? 0) }}</span>
-                <small>Report range: {{ \Illuminate\Support\Carbon::parse($startDate)->format('d M Y') }} - {{ \Illuminate\Support\Carbon::parse($endDate)->format('d M Y') }}</small>
-            </div>
-            <div class="signal">
-                <h3>Total Quantity</h3>
-                <span>{{ number_format($summary->total_jumlah ?? 0) }}</span>
-                <small>Combined stock movement in report range</small>
-            </div>
-            <div class="signal">
-                <h3>Total Value</h3>
-                <span>Rp {{ number_format($summary->total_nilai ?? 0, 0, ',', '.') }}</span>
-                <small>Sum of stock transaction value</small>
-            </div>
-            <div class="signal">
-                <h3>Top Item</h3>
-                <span>{{ $topItem->nama_barang ?? '-' }}</span>
-                <small>{{ $topItem ? 'Rp ' . number_format($topItem->total_nilai, 0, ',', '.') : 'No stock data in range' }}</small>
-            </div>
+            <section class="signal-section">
+                <h3>Stock In</h3>
+                <div class="signal-section-grid">
+                    <div class="signal">
+                        <h3>Total Records</h3>
+                        <span>{{ number_format($stockSummaries['in']['total_records'] ?? 0) }}</span>
+                        <small>Report range: {{ \Illuminate\Support\Carbon::parse($startDate)->format('d M Y') }} - {{ \Illuminate\Support\Carbon::parse($endDate)->format('d M Y') }}</small>
+                    </div>
+                    <div class="signal">
+                        <h3>Total Quantity</h3>
+                        <span>{{ number_format($stockSummaries['in']['total_jumlah'] ?? 0) }}</span>
+                        <small>Total incoming items in range</small>
+                    </div>
+                    <div class="signal">
+                        <h3>Total Value</h3>
+                        <span>Rp {{ number_format($stockSummaries['in']['total_nilai'] ?? 0, 0, ',', '.') }}</span>
+                        <small>Value of all stock in transactions</small>
+                    </div>
+                    <div class="signal">
+                        <h3>Top Item</h3>
+                        <span>{{ $stockSummaries['in']['top_item_name'] ?? '-' }}</span>
+                        <small>{{ ($stockSummaries['in']['top_item_value'] ?? 0) > 0 ? 'Rp ' . number_format($stockSummaries['in']['top_item_value'], 0, ',', '.') : 'No stock in data in range' }}</small>
+                    </div>
+                </div>
+            </section>
+            <section class="signal-section">
+                <h3>Stock Out</h3>
+                <div class="signal-section-grid">
+                    <div class="signal">
+                        <h3>Total Records</h3>
+                        <span>{{ number_format($stockSummaries['out']['total_records'] ?? 0) }}</span>
+                        <small>Report range: {{ \Illuminate\Support\Carbon::parse($startDate)->format('d M Y') }} - {{ \Illuminate\Support\Carbon::parse($endDate)->format('d M Y') }}</small>
+                    </div>
+                    <div class="signal">
+                        <h3>Total Quantity</h3>
+                        <span>{{ number_format($stockSummaries['out']['total_jumlah'] ?? 0) }}</span>
+                        <small>Total outgoing items in range</small>
+                    </div>
+                    <div class="signal">
+                        <h3>Total Value</h3>
+                        <span>Rp {{ number_format($stockSummaries['out']['total_nilai'] ?? 0, 0, ',', '.') }}</span>
+                        <small>Value of all stock out transactions</small>
+                    </div>
+                    <div class="signal">
+                        <h3>Top Item</h3>
+                        <span>{{ $stockSummaries['out']['top_item_name'] ?? '-' }}</span>
+                        <small>{{ ($stockSummaries['out']['top_item_value'] ?? 0) > 0 ? 'Rp ' . number_format($stockSummaries['out']['top_item_value'], 0, ',', '.') : 'No stock out data in range' }}</small>
+                    </div>
+                </div>
+            </section>
         </div>
         <div class="chart-card">
             <div class="chart-header">
-                <strong>Last 7 Days Value</strong>
-                <span class="status">{{ number_format($stockInCount) }} IN / {{ number_format($stockOutCount) }} OUT</span>
+                <strong>Stock Movement Graph</strong>
+                <div class="chart-tabs" role="tablist" aria-label="Stock graph range">
+                    @foreach ($chartTabs as $tabKey => $tab)
+                    <button
+                        type="button"
+                        class="chart-tab {{ $loop->first ? 'is-active' : '' }}"
+                        data-chart-tab="{{ $tabKey }}"
+                        role="tab"
+                        aria-selected="{{ $loop->first ? 'true' : 'false' }}">
+                        {{ $tab['label'] }}
+                    </button>
+                    @endforeach
+                </div>
             </div>
-            <svg class="chart-line" viewBox="0 0 700 220" role="img" aria-label="Last 7 days stock value chart">
-                <defs>
-                    <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#0f6b5c" stop-opacity="0.35" />
-                        <stop offset="100%" stop-color="#0f6b5c" stop-opacity="0.05" />
-                    </linearGradient>
-                </defs>
-                <rect x="0" y="0" width="700" height="220" fill="none" />
-                <g stroke="rgba(15, 107, 92, 0.12)" stroke-width="1">
-                    @foreach ($gridLines as $lineY)
-                    <line x1="20" y1="{{ $lineY }}" x2="680" y2="{{ $lineY }}" />
-                    @endforeach
-                </g>
-                <path d="{{ $linePath }}"
-                    fill="none"
-                    stroke="#0f6b5c"
-                    stroke-width="4"
-                    stroke-linecap="round"
-                    stroke-linejoin="round" />
-                <path d="{{ $areaPath }}"
-                    fill="url(#lineFill)" />
-                <g fill="#0f6b5c">
-                    @foreach ($chartPoints as $point)
-                    <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="4" />
-                    @endforeach
-                </g>
-                <g fill="#6b6b6b" font-size="12">
-                    @foreach ($chartPoints as $point)
-                    <text x="{{ $point['x'] }}" y="210" text-anchor="{{ $loop->first ? 'start' : ($loop->last ? 'end' : 'middle') }}">{{ $point['label'] }}</text>
-                    @endforeach
-                </g>
-            </svg>
+            <div class="chart-panels">
+                @foreach ($chartTabs as $tabKey => $tab)
+                <section class="chart-panel {{ $loop->first ? 'is-active' : '' }}" data-chart-panel="{{ $tabKey }}">
+                    <div class="chart-meta">
+                        <p>{{ $tab['description'] }}</p>
+                        <span class="status">{{ number_format($stockInCount) }} IN / {{ number_format($stockOutCount) }} OUT</span>
+                    </div>
+                    <div class="chart-split">
+                        @foreach (['stock_in' => ['title' => 'Stock In', 'color' => '#0f6b5c', 'gradient' => 'lineFillIn'], 'stock_out' => ['title' => 'Stock Out', 'color' => '#d96b2b', 'gradient' => 'lineFillOut']] as $valueKey => $config)
+                        @php($chart = $buildChart(collect($tab['series']), $valueKey))
+                        <article class="chart-box">
+                            <h3>{{ $config['title'] }}</h3>
+                            <p>Total moved: {{ number_format(collect($tab['series'])->sum($valueKey)) }} items</p>
+                            <svg class="chart-line" viewBox="0 0 700 220" role="img" aria-label="{{ $config['title'] }} {{ strtolower($tab['label']) }} chart">
+                                <defs>
+                                    <linearGradient id="{{ $config['gradient'] }}-{{ $tabKey }}" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="{{ $config['color'] }}" stop-opacity="0.35" />
+                                        <stop offset="100%" stop-color="{{ $config['color'] }}" stop-opacity="0.05" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="0" y="0" width="700" height="220" fill="none" />
+                                <g stroke="rgba(15, 107, 92, 0.12)" stroke-width="1">
+                                    @foreach ($chart['gridLines'] as $lineY)
+                                    <line x1="56" y1="{{ $lineY }}" x2="680" y2="{{ $lineY }}" />
+                                    @endforeach
+                                </g>
+                                <g class="chart-value-label">
+                                    @foreach ($chart['valueLabels'] as $label)
+                                    <text x="48" y="{{ $label['y'] + 4 }}" text-anchor="end">{{ $label['value'] }}</text>
+                                    @endforeach
+                                </g>
+                                <path d="{{ $chart['linePath'] }}"
+                                    fill="none"
+                                    stroke="{{ $config['color'] }}"
+                                    stroke-width="4"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                <path d="{{ $chart['areaPath'] }}"
+                                    fill="url(#{{ $config['gradient'] }}-{{ $tabKey }})" />
+                                <g fill="{{ $config['color'] }}">
+                                    @foreach ($chart['points'] as $point)
+                                    <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="4" />
+                                    @endforeach
+                                </g>
+                                <g fill="#6b6b6b" font-size="12">
+                                    @foreach ($chart['points'] as $point)
+                                    <text x="{{ $point['x'] }}" y="210" text-anchor="{{ $loop->first ? 'start' : ($loop->last ? 'end' : 'middle') }}">{{ $point['label'] }}</text>
+                                    @endforeach
+                                </g>
+                            </svg>
+                        </article>
+                        @endforeach
+                    </div>
+                </section>
+                @endforeach
+            </div>
         </div>
     </section>
 </main>
+@endif
+@endsection
+
+@section('scripts')
+@if (!($simpleWelcome ?? false))
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('[data-chart-tab]');
+    const panels = document.querySelectorAll('[data-chart-panel]');
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            const target = tab.getAttribute('data-chart-tab');
+
+            tabs.forEach(function (item) {
+                const isActive = item === tab;
+                item.classList.toggle('is-active', isActive);
+                item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
+            panels.forEach(function (panel) {
+                panel.classList.toggle('is-active', panel.getAttribute('data-chart-panel') === target);
+            });
+        });
+    });
+});
+</script>
 @endif
 @endsection

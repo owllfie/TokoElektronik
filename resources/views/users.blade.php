@@ -129,6 +129,64 @@
         gap: 16px;
     }
 
+    .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tab-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 107, 92, 0.18);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 700;
+        background: #fff;
+    }
+
+    .tab-link.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+    }
+
+    .search {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex: 1 1 260px;
+    }
+
+    .search input {
+        width: min(360px, 100%);
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        font-family: inherit;
+    }
+
+    .add-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;
@@ -148,15 +206,6 @@
         border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         font-size: 14px;
         vertical-align: top;
-    }
-
-    code {
-        font-size: 12px;
-        background: #f4f4f4;
-        padding: 4px 6px;
-        border-radius: 8px;
-        display: inline-block;
-        word-break: break-all;
     }
 
     .actions {
@@ -186,37 +235,10 @@
         border: 1px solid rgba(180, 35, 24, 0.25);
     }
 
-    .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .search {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex: 1 1 260px;
-    }
-
-    .search input {
-        width: min(360px, 100%);
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-        font-family: inherit;
-    }
-
-    .add-btn {
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: none;
-        background: var(--accent);
-        color: #fff;
-        font-weight: 700;
-        cursor: pointer;
+    .btn-restore {
+        background: rgba(240, 180, 41, 0.18);
+        color: #6a4b00;
+        border: 1px solid rgba(240, 180, 41, 0.28);
     }
 
     .modal-backdrop {
@@ -277,14 +299,42 @@
 @endsection
 
 @section('content')
+    @php
+        $roleMap = collect($roles)->pluck('role', 'id_role');
+        $formatHistoryState = function (?array $state) use ($roleMap) {
+            if (empty($state)) {
+                return '-';
+            }
+
+            return collect($state)
+                ->only(['username', 'email', 'role'])
+                ->map(function ($value, $key) use ($roleMap) {
+                    $label = ucfirst($key);
+                    if ($key === 'role') {
+                        $value = $roleMap[$value] ?? $value;
+                    }
+
+                    return $label . ': ' . ($value === null || $value === '' ? '-' : $value);
+                })
+                ->implode(' | ');
+        };
+    @endphp
     <main>
         <div class="panel">
-            <h1>User list</h1>
+            <h1>User List</h1>
             <div class="toolbar">
                 <form class="search" method="GET" action="{{ route('users') }}" id="searchForm">
+                    <input type="hidden" name="tab" value="{{ $tab }}" />
                     <input type="text" name="q" placeholder="Search users..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
                 </form>
-                <button class="add-btn" type="button" data-modal="add">Add User</button>
+                @if ($tab === 'now')
+                    <button class="add-btn" type="button" data-modal="add">Add User</button>
+                @endif
+            </div>
+            <div class="tabs">
+                <a class="tab-link {{ $tab === 'now' ? 'active' : '' }}" href="{{ route('users', ['tab' => 'now', 'q' => $search]) }}">Now</a>
+                <a class="tab-link {{ $tab === 'trash' ? 'active' : '' }}" href="{{ route('users', ['tab' => 'trash', 'q' => $search]) }}">Trash Bin</a>
+                <a class="tab-link {{ $tab === 'history' ? 'active' : '' }}" href="{{ route('users', ['tab' => 'history', 'q' => $search]) }}">Update History</a>
             </div>
             @if(session('status'))
                 <p>{{ session('status') }}</p>
@@ -296,50 +346,106 @@
                     @endforeach
                 </div>
             @endif
-            <table>
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($users as $user)
+
+            @if ($tab === 'history')
+                <table>
+                    <thead>
                         <tr>
-                            <td>{{ $user->username }}</td>
-                            <td>{{ $user->email }}</td>
-                            <td>{{ $user->role_name ?? '-' }}</td>
-                            <td>
-                                <div class="actions">
-                                    <button
-                                        class="btn btn-update"
-                                        type="button"
-                                        data-modal="update"
-                                        data-id="{{ $user->getKey() }}"
-                                        data-username="{{ $user->username }}"
-                                        data-email="{{ $user->email }}"
-                                        data-role="{{ $user->role }}"
-                                    >
-                                        Update
-                                    </button>
-                                    <form method="POST" action="{{ route('users.destroy', $user->getKey()) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this user?')">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th>Record ID</th>
+                            <th>Before</th>
+                            <th>After</th>
+                            <th>Changed At</th>
+                            <th>Action</th>
                         </tr>
-                    @empty
+                    </thead>
+                    <tbody>
+                        @forelse ($histories as $history)
+                            <tr>
+                                <td>#{{ $history->record_id }}</td>
+                                <td>{{ $formatHistoryState($history->before_state) }}</td>
+                                <td>{{ $formatHistoryState($history->after_state) }}</td>
+                                <td>{{ optional($history->created_at)->format('d M Y H:i') ?? '-' }}</td>
+                                <td>
+                                    <div class="actions">
+                                        <form method="POST" action="{{ route('users.history.revert', $history->id) }}">
+                                            @csrf
+                                            <button class="btn btn-update" type="submit" onclick="return confirm('Revert this update?')">Revert</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5">No update history found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                @include('partials.pagination', ['paginator' => $histories])
+            @else
+                <table>
+                    <thead>
                         <tr>
-                            <td colspan="4">No users found.</td>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            @if ($tab === 'trash')
+                                <th>Deleted At</th>
+                            @endif
+                            <th>Action</th>
                         </tr>
-                    @endforelse
-                </tbody>
-            </table>
-            @include('partials.pagination', ['paginator' => $users])
+                    </thead>
+                    <tbody>
+                        @forelse ($users as $user)
+                            <tr>
+                                <td>{{ $user->username }}</td>
+                                <td>{{ $user->email }}</td>
+                                <td>{{ $user->role_name ?? ($roleMap[$user->role] ?? '-') }}</td>
+                                @if ($tab === 'trash')
+                                    <td>{{ optional($user->deleted_at)->format('d M Y H:i') ?? '-' }}</td>
+                                @endif
+                                <td>
+                                    <div class="actions">
+                                        @if ($tab === 'now')
+                                            <button
+                                                class="btn btn-update"
+                                                type="button"
+                                                data-modal="update"
+                                                data-id="{{ $user->getKey() }}"
+                                                data-username="{{ $user->username }}"
+                                                data-email="{{ $user->email }}"
+                                                data-role="{{ $user->role }}"
+                                            >
+                                                Update
+                                            </button>
+                                            <form method="POST" action="{{ route('users.destroy', $user->getKey()) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-delete" type="submit" onclick="return confirm('Move this user to trash?')">Delete</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('users.restore', $user->getKey()) }}">
+                                                @csrf
+                                                <button class="btn btn-restore" type="submit">Restore</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('users.force-delete', $user->getKey()) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this user permanently?')">Delete Permanently</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="{{ $tab === 'trash' ? 5 : 4 }}">No users found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                @include('partials.pagination', ['paginator' => $users])
+            @endif
         </div>
     </main>
 
@@ -393,8 +499,13 @@
     const modalRole = document.getElementById('modalRole');
     const searchInput = document.getElementById('searchInput');
     const searchForm = document.getElementById('searchForm');
+    const modalClose = document.getElementById('modalClose');
 
     const openModal = (mode, data = {}) => {
+        if (!backdrop) {
+            return;
+        }
+
         modalPassword.value = '';
         if (mode === 'add') {
             modalTitle.textContent = 'Add User';
@@ -432,15 +543,19 @@
         });
     });
 
-    document.getElementById('modalClose').addEventListener('click', () => {
-        backdrop.style.display = 'none';
-    });
-
-    backdrop.addEventListener('click', (event) => {
-        if (event.target === backdrop) {
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
             backdrop.style.display = 'none';
-        }
-    });
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener('click', (event) => {
+            if (event.target === backdrop) {
+                backdrop.style.display = 'none';
+            }
+        });
+    }
 
     if (searchInput && searchForm) {
         let searchTimer;

@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.session' => \App\Http\Middleware\EnsureSessionAuthenticated::class,
             'role' => \App\Http\Middleware\EnsureSessionRole::class,
+            'page.access' => \App\Http\Middleware\EnsurePageAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -129,6 +129,95 @@
         gap: 16px;
     }
 
+    .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tab-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 107, 92, 0.18);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 700;
+        background: #fff;
+    }
+
+    .tab-link.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+    }
+
+    .search {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex: 1 1 260px;
+    }
+
+    .search input {
+        width: min(360px, 100%);
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        font-family: inherit;
+    }
+
+    .add-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .section-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .section-header h2 {
+        margin: 0;
+    }
+
+    .export-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .export-actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(15, 107, 92, 0.18);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 700;
+        background: #fff;
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;
@@ -177,37 +266,10 @@
         border: 1px solid rgba(180, 35, 24, 0.25);
     }
 
-    .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .search {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex: 1 1 260px;
-    }
-
-    .search input {
-        width: min(360px, 100%);
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-        font-family: inherit;
-    }
-
-    .add-btn {
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: none;
-        background: var(--accent);
-        color: #fff;
-        font-weight: 700;
-        cursor: pointer;
+    .btn-restore {
+        background: rgba(240, 180, 41, 0.18);
+        color: #6a4b00;
+        border: 1px solid rgba(240, 180, 41, 0.28);
     }
 
     .modal-backdrop {
@@ -219,37 +281,6 @@
         justify-content: center;
         padding: 20px;
         z-index: 50;
-    }
-
-    .section-header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-
-    .section-header h2 {
-        margin: 0;
-    }
-
-    .export-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .export-actions a {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid rgba(15, 107, 92, 0.18);
-        color: var(--ink);
-        text-decoration: none;
-        font-weight: 700;
-        background: #fff;
     }
 
     .modal {
@@ -299,14 +330,45 @@
 @endsection
 
 @section('content')
+    @php
+        $formatHistoryState = function (?array $state) {
+            if (empty($state)) {
+                return '-';
+            }
+
+            return collect($state)
+                ->only(['id_barang', 'jumlah', 'harga_satuan', 'total_harga', 'tipe'])
+                ->map(function ($value, $key) {
+                    $label = match ($key) {
+                        'id_barang' => 'ID Barang',
+                        'jumlah' => 'Jumlah',
+                        'harga_satuan' => 'Harga',
+                        'total_harga' => 'Total',
+                        'tipe' => 'Tipe',
+                        default => ucfirst(str_replace('_', ' ', $key)),
+                    };
+
+                    return $label . ': ' . ($value === null || $value === '' ? '-' : $value);
+                })
+                ->implode(' | ');
+        };
+    @endphp
     <main>
         <div class="panel">
             <h1>Stock</h1>
             <div class="toolbar">
                 <form class="search" method="GET" action="{{ route('stock') }}" id="searchForm">
+                    <input type="hidden" name="tab" value="{{ $tab }}" />
                     <input type="text" name="q" placeholder="Search stock..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
                 </form>
-                <button class="add-btn" type="button" data-modal="add">Add Stock</button>
+                @if ($tab === 'now')
+                    <button class="add-btn" type="button" data-modal="add">Add Stock</button>
+                @endif
+            </div>
+            <div class="tabs">
+                <a class="tab-link {{ $tab === 'now' ? 'active' : '' }}" href="{{ route('stock', ['tab' => 'now', 'q' => $search]) }}">Now</a>
+                <a class="tab-link {{ $tab === 'trash' ? 'active' : '' }}" href="{{ route('stock', ['tab' => 'trash', 'q' => $search]) }}">Trash Bin</a>
+                <a class="tab-link {{ $tab === 'history' ? 'active' : '' }}" href="{{ route('stock', ['tab' => 'history', 'q' => $search]) }}">Update History</a>
             </div>
             @if(session('status'))
                 <p>{{ session('status') }}</p>
@@ -318,127 +380,126 @@
                     @endforeach
                 </div>
             @endif
-            <div class="section-header">
-                <h2>Stock In</h2>
-                <div class="export-actions">
-                    <a href="{{ route('stock.print', ['type' => 'in', 'q' => $search]) }}" target="_blank" rel="noopener noreferrer">Print</a>
-                    <a href="{{ route('stock.pdf', ['type' => 'in', 'q' => $search]) }}">PDF</a>
-                    <a href="{{ route('stock.excel', ['type' => 'in', 'q' => $search]) }}">Excel</a>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID Barang</th>
-                        <th>Nama Barang</th>
-                        <th>Jumlah</th>
-                        <th>Harga Satuan</th>
-                        <th>Total Harga</th>
-                        <th>Tanggal</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($stockIn as $stock)
-                        <tr>
-                            <td>{{ $stock->id_barang }}</td>
-                            <td>{{ $stock->nama_barang ?? '-' }}</td>
-                            <td>{{ $stock->jumlah }}</td>
-                            <td>{{ $stock->harga_satuan }}</td>
-                            <td>{{ $stock->total_harga }}</td>
-                            <td>{{ optional($stock->created_at)->format('d M Y H:i') ?? '-' }}</td>
-                            <td>
-                                <div class="actions">
-                                    <button
-                                        class="btn btn-update"
-                                        type="button"
-                                        data-modal="update"
-                                        data-id="{{ $stock->getKey() }}"
-                                        data-id-barang="{{ $stock->id_barang }}"
-                                        data-jumlah="{{ $stock->jumlah }}"
-                                        data-harga-satuan="{{ $stock->harga_satuan }}"
-                                        data-total-harga="{{ $stock->total_harga }}"
-                                        data-tipe="{{ $stock->tipe }}"
-                                    >
-                                        Update
-                                    </button>
-                                    <form method="POST" action="{{ route('stock.destroy', $stock->getKey()) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this stock?')">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7">No stock in found.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-            @include('partials.pagination', ['paginator' => $stockIn])
 
-            <div class="section-header">
-                <h2>Stock Out</h2>
-                <div class="export-actions">
-                    <a href="{{ route('stock.print', ['type' => 'out', 'q' => $search]) }}" target="_blank" rel="noopener noreferrer">Print</a>
-                    <a href="{{ route('stock.pdf', ['type' => 'out', 'q' => $search]) }}">PDF</a>
-                    <a href="{{ route('stock.excel', ['type' => 'out', 'q' => $search]) }}">Excel</a>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID Barang</th>
-                        <th>Nama Barang</th>
-                        <th>Jumlah</th>
-                        <th>Harga Satuan</th>
-                        <th>Total Harga</th>
-                        <th>Tanggal</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($stockOut as $stock)
+            @if ($tab === 'history')
+                <table>
+                    <thead>
                         <tr>
-                            <td>{{ $stock->id_barang }}</td>
-                            <td>{{ $stock->nama_barang ?? '-' }}</td>
-                            <td>{{ $stock->jumlah }}</td>
-                            <td>{{ $stock->harga_satuan }}</td>
-                            <td>{{ $stock->total_harga }}</td>
-                            <td>{{ optional($stock->created_at)->format('d M Y H:i') ?? '-' }}</td>
-                            <td>
-                                <div class="actions">
-                                    <button
-                                        class="btn btn-update"
-                                        type="button"
-                                        data-modal="update"
-                                        data-id="{{ $stock->getKey() }}"
-                                        data-id-barang="{{ $stock->id_barang }}"
-                                        data-jumlah="{{ $stock->jumlah }}"
-                                        data-harga-satuan="{{ $stock->harga_satuan }}"
-                                        data-total-harga="{{ $stock->total_harga }}"
-                                        data-tipe="{{ $stock->tipe }}"
-                                    >
-                                        Update
-                                    </button>
-                                    <form method="POST" action="{{ route('stock.destroy', $stock->getKey()) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this stock?')">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th>Record ID</th>
+                            <th>Before</th>
+                            <th>After</th>
+                            <th>Changed At</th>
+                            <th>Action</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7">No stock out found.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-            @include('partials.pagination', ['paginator' => $stockOut])
+                    </thead>
+                    <tbody>
+                        @forelse ($histories as $history)
+                            <tr>
+                                <td>#{{ $history->record_id }}</td>
+                                <td>{{ $formatHistoryState($history->before_state) }}</td>
+                                <td>{{ $formatHistoryState($history->after_state) }}</td>
+                                <td>{{ optional($history->created_at)->format('d M Y H:i') ?? '-' }}</td>
+                                <td>
+                                    <div class="actions">
+                                        <form method="POST" action="{{ route('stock.history.revert', $history->id) }}">
+                                            @csrf
+                                            <button class="btn btn-update" type="submit" onclick="return confirm('Revert this update?')">Revert</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5">No update history found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                @include('partials.pagination', ['paginator' => $histories])
+            @else
+                @foreach (['in' => ['title' => 'Stock In', 'records' => $stockIn], 'out' => ['title' => 'Stock Out', 'records' => $stockOut]] as $type => $config)
+                    <div class="section-header">
+                        <h2>{{ $config['title'] }}</h2>
+                        @if ($tab === 'now')
+                            <div class="export-actions">
+                                <a href="{{ route('stock.print', ['type' => $type, 'q' => $search]) }}" target="_blank" rel="noopener noreferrer">Print</a>
+                                <a href="{{ route('stock.pdf', ['type' => $type, 'q' => $search]) }}">PDF</a>
+                                <a href="{{ route('stock.excel', ['type' => $type, 'q' => $search]) }}">Excel</a>
+                            </div>
+                        @endif
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Barang</th>
+                                <th>Nama Barang</th>
+                                <th>Jumlah</th>
+                                <th>Harga Satuan</th>
+                                <th>Total Harga</th>
+                                <th>Tanggal</th>
+                                @if ($tab === 'trash')
+                                    <th>Deleted At</th>
+                                @endif
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($config['records'] as $stock)
+                                <tr>
+                                    <td>{{ $stock->id_barang }}</td>
+                                    <td>{{ $stock->nama_barang ?? '-' }}</td>
+                                    <td>{{ $stock->jumlah }}</td>
+                                    <td>{{ $stock->harga_satuan }}</td>
+                                    <td>{{ $stock->total_harga }}</td>
+                                    <td>{{ optional($stock->created_at)->format('d M Y H:i') ?? '-' }}</td>
+                                    @if ($tab === 'trash')
+                                        <td>{{ optional($stock->deleted_at)->format('d M Y H:i') ?? '-' }}</td>
+                                    @endif
+                                    <td>
+                                        <div class="actions">
+                                            @if ($tab === 'now')
+                                                <button
+                                                    class="btn btn-update"
+                                                    type="button"
+                                                    data-modal="update"
+                                                    data-id="{{ $stock->getKey() }}"
+                                                    data-id-barang="{{ $stock->id_barang }}"
+                                                    data-jumlah="{{ $stock->jumlah }}"
+                                                    data-harga-satuan="{{ $stock->harga_satuan }}"
+                                                    data-total-harga="{{ $stock->total_harga }}"
+                                                    data-tipe="{{ $stock->tipe }}"
+                                                >
+                                                    Update
+                                                </button>
+                                                <form method="POST" action="{{ route('stock.destroy', $stock->getKey()) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn btn-delete" type="submit" onclick="return confirm('Move this stock to trash?')">Delete</button>
+                                                </form>
+                                            @else
+                                                <form method="POST" action="{{ route('stock.restore', $stock->getKey()) }}">
+                                                    @csrf
+                                                    <button class="btn btn-restore" type="submit">Restore</button>
+                                                </form>
+                                                <form method="POST" action="{{ route('stock.force-delete', $stock->getKey()) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this stock permanently?')">Delete Permanently</button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="{{ $tab === 'trash' ? 8 : 7 }}">No {{ strtolower($config['title']) }} found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    @include('partials.pagination', ['paginator' => $config['records']])
+                @endforeach
+            @endif
         </div>
     </main>
 
@@ -501,8 +562,13 @@
     const modalTipe = document.getElementById('modalTipe');
     const searchInput = document.getElementById('searchInput');
     const searchForm = document.getElementById('searchForm');
+    const modalClose = document.getElementById('modalClose');
 
     const openModal = (mode, data = {}) => {
+        if (!backdrop) {
+            return;
+        }
+
         if (mode === 'add') {
             modalTitle.textContent = 'Add Stock';
             modalForm.action = "{{ route('stock.store') }}";
@@ -543,15 +609,19 @@
         });
     });
 
-    document.getElementById('modalClose').addEventListener('click', () => {
-        backdrop.style.display = 'none';
-    });
-
-    backdrop.addEventListener('click', (event) => {
-        if (event.target === backdrop) {
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
             backdrop.style.display = 'none';
-        }
-    });
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener('click', (event) => {
+            if (event.target === backdrop) {
+                backdrop.style.display = 'none';
+            }
+        });
+    }
 
     if (searchInput && searchForm) {
         let searchTimer;
