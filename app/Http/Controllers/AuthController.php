@@ -11,7 +11,9 @@ class AuthController extends Controller
     public function showLogin(Request $request)
     {
         if ($request->session()->has('user')) {
-            return redirect()->route('home');
+            return redirect()->route(
+                $this->defaultRouteForRole((int) data_get($request->session()->get('user'), 'role', 0))
+            );
         }
 
         return view('login');
@@ -37,9 +39,10 @@ class AuthController extends Controller
             'id_user' => $user->id_user,
             'username' => $user->username,
             'email' => $user->email,
+            'role' => (int) $user->role,
         ]);
 
-        return redirect()->route('home');
+        return redirect()->route($this->defaultRouteForRole((int) $user->role));
     }
 
     public function logout(Request $request)
@@ -49,5 +52,13 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    private function defaultRouteForRole(int $role): string
+    {
+        return match ($role) {
+            1, 2, 3, 4 => 'home',
+            default => 'login',
+        };
     }
 }

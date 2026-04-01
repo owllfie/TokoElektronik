@@ -333,7 +333,7 @@
                     @endforelse
                 </tbody>
             </table>
-            {{ $items->links() }}
+            @include('partials.pagination', ['paginator' => $items])
         </div>
     </main>
 

@@ -221,6 +221,37 @@
         z-index: 50;
     }
 
+    .section-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .section-header h2 {
+        margin: 0;
+    }
+
+    .export-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .export-actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(15, 107, 92, 0.18);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 700;
+        background: #fff;
+    }
+
     .modal {
         background: #fff;
         border-radius: 16px;
@@ -287,25 +318,35 @@
                     @endforeach
                 </div>
             @endif
+            <div class="section-header">
+                <h2>Stock In</h2>
+                <div class="export-actions">
+                    <a href="{{ route('stock.print', ['type' => 'in', 'q' => $search]) }}" target="_blank" rel="noopener noreferrer">Print</a>
+                    <a href="{{ route('stock.pdf', ['type' => 'in', 'q' => $search]) }}">PDF</a>
+                    <a href="{{ route('stock.excel', ['type' => 'in', 'q' => $search]) }}">Excel</a>
+                </div>
+            </div>
             <table>
                 <thead>
                     <tr>
                         <th>ID Barang</th>
+                        <th>Nama Barang</th>
                         <th>Jumlah</th>
                         <th>Harga Satuan</th>
                         <th>Total Harga</th>
-                        <th>Tipe</th>
+                        <th>Tanggal</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($stocks as $stock)
+                    @forelse ($stockIn as $stock)
                         <tr>
                             <td>{{ $stock->id_barang }}</td>
+                            <td>{{ $stock->nama_barang ?? '-' }}</td>
                             <td>{{ $stock->jumlah }}</td>
                             <td>{{ $stock->harga_satuan }}</td>
                             <td>{{ $stock->total_harga }}</td>
-                            <td>{{ $stock->tipe }}</td>
+                            <td>{{ optional($stock->created_at)->format('d M Y H:i') ?? '-' }}</td>
                             <td>
                                 <div class="actions">
                                     <button
@@ -331,12 +372,73 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6">No stock found.</td>
+                            <td colspan="7">No stock in found.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
-            {{ $stocks->links() }}
+            @include('partials.pagination', ['paginator' => $stockIn])
+
+            <div class="section-header">
+                <h2>Stock Out</h2>
+                <div class="export-actions">
+                    <a href="{{ route('stock.print', ['type' => 'out', 'q' => $search]) }}" target="_blank" rel="noopener noreferrer">Print</a>
+                    <a href="{{ route('stock.pdf', ['type' => 'out', 'q' => $search]) }}">PDF</a>
+                    <a href="{{ route('stock.excel', ['type' => 'out', 'q' => $search]) }}">Excel</a>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Barang</th>
+                        <th>Nama Barang</th>
+                        <th>Jumlah</th>
+                        <th>Harga Satuan</th>
+                        <th>Total Harga</th>
+                        <th>Tanggal</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($stockOut as $stock)
+                        <tr>
+                            <td>{{ $stock->id_barang }}</td>
+                            <td>{{ $stock->nama_barang ?? '-' }}</td>
+                            <td>{{ $stock->jumlah }}</td>
+                            <td>{{ $stock->harga_satuan }}</td>
+                            <td>{{ $stock->total_harga }}</td>
+                            <td>{{ optional($stock->created_at)->format('d M Y H:i') ?? '-' }}</td>
+                            <td>
+                                <div class="actions">
+                                    <button
+                                        class="btn btn-update"
+                                        type="button"
+                                        data-modal="update"
+                                        data-id="{{ $stock->getKey() }}"
+                                        data-id-barang="{{ $stock->id_barang }}"
+                                        data-jumlah="{{ $stock->jumlah }}"
+                                        data-harga-satuan="{{ $stock->harga_satuan }}"
+                                        data-total-harga="{{ $stock->total_harga }}"
+                                        data-tipe="{{ $stock->tipe }}"
+                                    >
+                                        Update
+                                    </button>
+                                    <form method="POST" action="{{ route('stock.destroy', $stock->getKey()) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this stock?')">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7">No stock out found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+            @include('partials.pagination', ['paginator' => $stockOut])
         </div>
     </main>
 

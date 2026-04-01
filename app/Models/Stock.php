@@ -16,5 +16,10 @@ class Stock extends Model
         'harga_satuan',
         'total_harga',
         'tipe',
+        'created_at',
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
     ];
 }

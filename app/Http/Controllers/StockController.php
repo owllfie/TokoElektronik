@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\StockTableExport;
 use App\Models\Item;
 use App\Models\Stock;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StockController extends Controller
 {
@@ -14,26 +17,63 @@ class StockController extends Controller
     {
         $search = $request->input('q');
 
-        $stocks = Stock::query()
-            ->when($search, function ($query, $search) {
-                $query->where('id_barang', 'like', "%{$search}%")
-                    ->orWhere('jumlah', 'like', "%{$search}%")
-                    ->orWhere('harga_satuan', 'like', "%{$search}%")
-                    ->orWhere('total_harga', 'like', "%{$search}%")
-                    ->orWhere('tipe', 'like', "%{$search}%");
-            })
-            ->orderBy('id_barang')
-            ->paginate(5)
+        $stockIn = $this->stockQuery($search, 'in')
+            ->orderByDesc('stock.created_at')
+            ->paginate(5, ['*'], 'in_page')
+            ->withQueryString();
+
+        $stockOut = $this->stockQuery($search, 'out')
+            ->orderByDesc('stock.created_at')
+            ->paginate(5, ['*'], 'out_page')
             ->withQueryString();
 
         return view('stock', [
-            'stocks' => $stocks,
+            'stockIn' => $stockIn,
+            'stockOut' => $stockOut,
             'search' => $search,
             'barangs' => Item::query()
                 ->select('id_barang', 'nama_barang')
                 ->orderBy('nama_barang')
                 ->get(),
         ]);
+    }
+
+    public function print(Request $request, string $type)
+    {
+        $search = $request->input('q');
+
+        return view('exports.stock-print', [
+            'title' => $this->stockTitle($type),
+            'stocks' => $this->stockQuery($search, $type)->orderByDesc('stock.created_at')->get(),
+            'meta' => $this->stockMeta($type, $search),
+        ]);
+    }
+
+    public function pdf(Request $request, string $type)
+    {
+        $search = $request->input('q');
+
+        $pdf = Pdf::loadView('exports.stock-pdf', [
+            'title' => $this->stockTitle($type),
+            'stocks' => $this->stockQuery($search, $type)->orderByDesc('stock.created_at')->get(),
+            'meta' => $this->stockMeta($type, $search),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('stock-' . $type . '.pdf');
+    }
+
+    public function excel(Request $request, string $type)
+    {
+        $search = $request->input('q');
+
+        return Excel::download(
+            new StockTableExport(
+                $this->stockTitle($type),
+                $this->stockQuery($search, $type)->orderByDesc('stock.created_at')->get(),
+                $this->stockMeta($type, $search),
+            ),
+            'stock-' . $type . '.xlsx'
+        );
     }
 
     public function store(Request $request)
@@ -45,6 +85,8 @@ class StockController extends Controller
             'total_harga' => ['required', 'integer', 'min:0'],
             'tipe' => ['required', 'in:in,out'],
         ]);
+
+        $data['created_at'] = now();
 
         DB::transaction(function () use ($data) {
             $item = Item::where('id_barang', $data['id_barang'])->lockForUpdate()->firstOrFail();
@@ -137,5 +179,38 @@ class StockController extends Controller
         return redirect()
             ->route('stock')
             ->with('status', 'Stock deleted.');
+    }
+
+    private function stockQuery(?string $search, ?string $type = null)
+    {
+        return Stock::query()
+            ->leftJoin('barang', 'stock.id_barang', '=', 'barang.id_barang')
+            ->select('stock.*', 'barang.nama_barang')
+            ->when($type, function ($query, $type) {
+                $query->where('stock.tipe', $type);
+            })
+            ->when($search, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('stock.id_barang', 'like', "%{$search}%")
+                        ->orWhere('barang.nama_barang', 'like', "%{$search}%")
+                        ->orWhere('stock.jumlah', 'like', "%{$search}%")
+                        ->orWhere('stock.harga_satuan', 'like', "%{$search}%")
+                        ->orWhere('stock.total_harga', 'like', "%{$search}%")
+                        ->orWhere('stock.tipe', 'like', "%{$search}%");
+                });
+            });
+    }
+
+    private function stockTitle(string $type): string
+    {
+        return $type === 'in' ? 'Stock In' : 'Stock Out';
+    }
+
+    private function stockMeta(string $type, ?string $search): array
+    {
+        return array_filter([
+            'Type' => strtoupper($type),
+            'Search' => $search ?: null,
+        ]);
     }
 }

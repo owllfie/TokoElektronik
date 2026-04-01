@@ -345,94 +345,126 @@
 @endsection
 
 @section('content')
-    <main class="hero">
-        <section class="panel">
-            <h2>Statistics</h2>
-            <div class="signal-grid">
-                <div class="signal">
-                    <h3>Units sold</h3>
-                    <span>1,248</span>
-                    <small>+12% vs last week</small>
-                </div>
-                <div class="signal">
-                    <h3>Top category</h3>
-                    <span>Smart Audio</span>
-                    <small>38% of revenue</small>
-                </div>
-                <div class="signal">
-                    <h3>Low stock</h3>
-                    <span>17 SKUs</span>
-                    <small>Reorder recommended</small>
-                </div>
-                <div class="signal">
-                    <h3>Service tickets</h3>
-                    <span>6</span>
-                    <small>2 awaiting parts</small>
-                </div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-header">
-                    <strong>Weekly Sales Trend</strong>
-                    <span class="status">Placeholder</span>
-                </div>
-                <svg class="chart-line" viewBox="0 0 700 220" role="img" aria-label="Weekly sales line chart placeholder">
-                    <defs>
-                        <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#0f6b5c" stop-opacity="0.35" />
-                            <stop offset="100%" stop-color="#0f6b5c" stop-opacity="0.05" />
-                        </linearGradient>
-                    </defs>
-                    <rect x="0" y="0" width="700" height="220" fill="none" />
-                    <g stroke="rgba(15, 107, 92, 0.12)" stroke-width="1">
-                        <line x1="20" y1="40" x2="680" y2="40" />
-                        <line x1="20" y1="90" x2="680" y2="90" />
-                        <line x1="20" y1="140" x2="680" y2="140" />
-                        <line x1="20" y1="190" x2="680" y2="190" />
-                    </g>
-                    <path d="M20 150 L130 120 L240 135 L350 90 L460 110 L570 70 L680 100"
-                          fill="none"
-                          stroke="#0f6b5c"
-                          stroke-width="4"
-                          stroke-linecap="round"
-                          stroke-linejoin="round" />
-                    <path d="M20 150 L130 120 L240 135 L350 90 L460 110 L570 70 L680 100 L680 190 L20 190 Z"
-                          fill="url(#lineFill)" />
-                    <g fill="#0f6b5c">
-                        <circle cx="20" cy="150" r="4" />
-                        <circle cx="130" cy="120" r="4" />
-                        <circle cx="240" cy="135" r="4" />
-                        <circle cx="350" cy="90" r="4" />
-                        <circle cx="460" cy="110" r="4" />
-                        <circle cx="570" cy="70" r="4" />
-                        <circle cx="680" cy="100" r="4" />
-                    </g>
-                    <g fill="#6b6b6b" font-size="12">
-                        <text x="20" y="210" text-anchor="start">Mon</text>
-                        <text x="130" y="210" text-anchor="middle">Tue</text>
-                        <text x="240" y="210" text-anchor="middle">Wed</text>
-                        <text x="350" y="210" text-anchor="middle">Thu</text>
-                        <text x="460" y="210" text-anchor="middle">Fri</text>
-                        <text x="570" y="210" text-anchor="middle">Sat</text>
-                        <text x="680" y="210" text-anchor="end">Sun</text>
-                    </g>
-                </svg>
-            </div>
-            <div class="list" style="margin-top: 18px;">
-                <div class="list-item">
-                    <div>
-                        <strong>Premium earbuds</strong><br />
-                        <small>Promo ends tonight</small>
+    @if ($simpleWelcome ?? false)
+        <main class="hero">
+            <section class="panel">
+                <h2>Welcome</h2>
+                <p>Welcome, {{ $username }}.</p>
+            </section>
+        </main>
+    @else
+        @php
+            $chartWidth = 700;
+            $chartHeight = 220;
+            $leftPad = 20;
+            $rightPad = 20;
+            $topPad = 30;
+            $bottomPad = 30;
+            $usableWidth = $chartWidth - $leftPad - $rightPad;
+            $usableHeight = $chartHeight - $topPad - $bottomPad;
+            $pointCount = max($chartDays->count() - 1, 1);
+
+            $chartPoints = $chartDays->map(function ($day, $index) use ($leftPad, $topPad, $usableWidth, $usableHeight, $pointCount, $maxChartValue) {
+                $x = $leftPad + (($usableWidth / $pointCount) * $index);
+                $y = $topPad + $usableHeight - (($day['value'] / $maxChartValue) * $usableHeight);
+
+                return [
+                    'x' => round($x, 2),
+                    'y' => round($y, 2),
+                    'label' => $day['label'],
+                    'value' => $day['value'],
+                ];
+            });
+
+            $linePath = $chartPoints->map(fn ($point, $index) => ($index === 0 ? 'M' : 'L') . $point['x'] . ' ' . $point['y'])->implode(' ');
+            $areaPath = $linePath . ' L' . ($chartWidth - $rightPad) . ' ' . ($chartHeight - $bottomPad) . ' L' . $leftPad . ' ' . ($chartHeight - $bottomPad) . ' Z';
+            $gridLines = collect(range(0, 3))->map(function ($step) use ($leftPad, $rightPad, $topPad, $usableHeight) {
+                return round($topPad + (($usableHeight / 3) * $step), 2);
+            });
+        @endphp
+        <main class="hero">
+            <section class="panel">
+                <h2>Statistics</h2>
+                <div class="signal-grid">
+                    <div class="signal">
+                        <h3>Total Records</h3>
+                        <span>{{ number_format($summary->total_records ?? 0) }}</span>
+                        <small>Report range: {{ \Illuminate\Support\Carbon::parse($startDate)->format('d M Y') }} - {{ \Illuminate\Support\Carbon::parse($endDate)->format('d M Y') }}</small>
                     </div>
-                    <span class="status">Live</span>
-                </div>
-                <div class="list-item">
-                    <div>
-                        <strong>Smartwatch restock</strong><br />
-                        <small>ETA: Wednesday</small>
+                    <div class="signal">
+                        <h3>Total Quantity</h3>
+                        <span>{{ number_format($summary->total_jumlah ?? 0) }}</span>
+                        <small>Combined stock movement in report range</small>
                     </div>
-                    <span class="status">Queued</span>
+                    <div class="signal">
+                        <h3>Total Value</h3>
+                        <span>Rp {{ number_format($summary->total_nilai ?? 0, 0, ',', '.') }}</span>
+                        <small>Sum of stock transaction value</small>
+                    </div>
+                    <div class="signal">
+                        <h3>Top Item</h3>
+                        <span>{{ $topItem->nama_barang ?? '-' }}</span>
+                        <small>{{ $topItem ? 'Rp ' . number_format($topItem->total_nilai, 0, ',', '.') : 'No stock data in range' }}</small>
+                    </div>
                 </div>
-            </div>
-        </section>
-    </main>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <strong>Last 7 Days Value</strong>
+                        <span class="status">{{ number_format($stockInCount) }} IN / {{ number_format($stockOutCount) }} OUT</span>
+                    </div>
+                    <svg class="chart-line" viewBox="0 0 700 220" role="img" aria-label="Last 7 days stock value chart">
+                        <defs>
+                            <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#0f6b5c" stop-opacity="0.35" />
+                                <stop offset="100%" stop-color="#0f6b5c" stop-opacity="0.05" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="0" y="0" width="700" height="220" fill="none" />
+                        <g stroke="rgba(15, 107, 92, 0.12)" stroke-width="1">
+                            @foreach ($gridLines as $lineY)
+                                <line x1="20" y1="{{ $lineY }}" x2="680" y2="{{ $lineY }}" />
+                            @endforeach
+                        </g>
+                        <path d="{{ $linePath }}"
+                              fill="none"
+                              stroke="#0f6b5c"
+                              stroke-width="4"
+                              stroke-linecap="round"
+                              stroke-linejoin="round" />
+                        <path d="{{ $areaPath }}"
+                              fill="url(#lineFill)" />
+                        <g fill="#0f6b5c">
+                            @foreach ($chartPoints as $point)
+                                <circle cx="{{ $point['x'] }}" cy="{{ $point['y'] }}" r="4" />
+                            @endforeach
+                        </g>
+                        <g fill="#6b6b6b" font-size="12">
+                            @foreach ($chartPoints as $point)
+                                <text x="{{ $point['x'] }}" y="210" text-anchor="{{ $loop->first ? 'start' : ($loop->last ? 'end' : 'middle') }}">{{ $point['label'] }}</text>
+                            @endforeach
+                        </g>
+                    </svg>
+                </div>
+                <div class="list" style="margin-top: 18px;">
+                    @forelse ($latestStocks as $stock)
+                        <div class="list-item">
+                            <div>
+                                <strong>{{ $stock->nama_barang ?? 'Item #' . $stock->id_barang }}</strong><br />
+                                <small>{{ optional($stock->created_at)->format('d M Y H:i') ?? '-' }}</small>
+                            </div>
+                            <span class="status">{{ strtoupper($stock->tipe) }}</span>
+                        </div>
+                    @empty
+                        <div class="list-item">
+                            <div>
+                                <strong>No stock data</strong><br />
+                                <small>Add stock transactions to populate dashboard statistics.</small>
+                            </div>
+                            <span class="status">Empty</span>
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+        </main>
+    @endif
 @endsection

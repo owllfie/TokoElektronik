@@ -323,7 +323,7 @@
                     @endforelse
                 </tbody>
             </table>
-            {{ $types->links() }}
+            @include('partials.pagination', ['paginator' => $types])
         </div>
     </main>
 

@@ -339,7 +339,7 @@
                     @endforelse
                 </tbody>
             </table>
-            {{ $users->links() }}
+            @include('partials.pagination', ['paginator' => $users])
         </div>
     </main>
 
