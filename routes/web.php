@@ -15,6 +15,8 @@ Route::get('/', function () {
 
 Route::middleware('auth.session')->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
 
     Route::middleware('role:2,3,4')->group(function () {
         Route::get('/report', [ReportController::class, 'index'])->name('report');

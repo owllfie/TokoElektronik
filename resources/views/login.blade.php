@@ -189,7 +189,6 @@
             </div>
             <div class="actions">
                 <button class="button" type="submit">Sign In</button>
-                <a class="link" href="/">Back to home</a>
             </div>
         </form>
     </div>

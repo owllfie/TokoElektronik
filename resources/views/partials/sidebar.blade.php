@@ -19,6 +19,7 @@
     <nav class="side-nav">
         @if($user)
             <button class="toggle" type="button" id="toggleSidebar">Menu</button>
+            <a href="{{ route('profile') }}"><span>Profile</span></a>
             @if($canAccessUsers)
                 <a href="{{ route('users') }}"><span>Users</span></a>
             @endif

@@ -9,6 +9,47 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    public function profile(Request $request)
+    {
+        $sessionUser = $request->session()->get('user');
+        $user = User::findOrFail(data_get($sessionUser, 'id_user'));
+
+        return view('profile', [
+            'user' => $user,
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $sessionUser = $request->session()->get('user');
+        $user = User::findOrFail(data_get($sessionUser, 'id_user'));
+
+        $data = $request->validate([
+            'username' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->getKey() . ',' . $user->getKeyName()],
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
+        $user->update($data);
+
+        $request->session()->put('user', [
+            'id_user' => $user->id_user,
+            'username' => $user->username,
+            'email' => $user->email,
+            'role' => (int) $user->role,
+        ]);
+
+        return redirect()
+            ->route('profile')
+            ->with('status', 'Profile updated.');
+    }
+
     public function index(Request $request)
     {
         $search = $request->input('q');
