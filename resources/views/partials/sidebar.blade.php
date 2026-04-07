@@ -30,6 +30,9 @@
             @if(in_array('stock', $accessiblePageKeys, true))
                 <a href="{{ route('stock') }}"><span>Stock</span></a>
             @endif
+            @if(in_array('retur', $accessiblePageKeys, true))
+                <a href="{{ route('retur') }}"><span>Retur</span></a>
+            @endif
             @if(in_array('report', $accessiblePageKeys, true))
                 <a href="{{ route('report') }}"><span>Report</span></a>
             @endif

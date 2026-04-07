@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ReturController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TypeController;
@@ -40,6 +41,16 @@ Route::middleware('auth.session')->group(function () {
             Route::post('/stock/history/{historyId}/revert', [StockController::class, 'revertHistory'])->name('stock.history.revert');
             Route::put('/stock/{id}', [StockController::class, 'update'])->name('stock.update');
             Route::delete('/stock/{id}', [StockController::class, 'destroy'])->name('stock.destroy');
+        });
+
+        Route::middleware('page.access:retur')->group(function () {
+            Route::get('/retur', [ReturController::class, 'index'])->name('retur');
+            Route::post('/retur', [ReturController::class, 'store'])->name('retur.store');
+            Route::post('/retur/{id}/restore', [ReturController::class, 'restore'])->name('retur.restore');
+            Route::delete('/retur/{id}/force', [ReturController::class, 'forceDelete'])->name('retur.force-delete');
+            Route::post('/retur/history/{historyId}/revert', [ReturController::class, 'revertHistory'])->name('retur.history.revert');
+            Route::put('/retur/{id}', [ReturController::class, 'update'])->name('retur.update');
+            Route::delete('/retur/{id}', [ReturController::class, 'destroy'])->name('retur.destroy');
         });
 
         Route::middleware('page.access:items')->group(function () {

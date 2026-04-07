@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Toko Elektronik | Stock')
+@section('title', 'Toko Elektronik | Retur')
 @section('brand_mark', 'E')
 @section('brand_name', 'Electro')
 
@@ -169,12 +169,19 @@
         flex: 1 1 260px;
     }
 
-    .search input {
-        width: min(360px, 100%);
+    .search input,
+    .modal input,
+    .modal select,
+    .modal textarea {
+        width: 100%;
         padding: 10px 12px;
         border-radius: 10px;
         border: 1px solid rgba(0, 0, 0, 0.15);
         font-family: inherit;
+    }
+
+    .search input {
+        width: min(360px, 100%);
     }
 
     .add-btn {
@@ -185,37 +192,6 @@
         color: #fff;
         font-weight: 700;
         cursor: pointer;
-    }
-
-    .section-header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-
-    .section-header h2 {
-        margin: 0;
-    }
-
-    .export-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .export-actions a {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid rgba(15, 107, 92, 0.18);
-        color: var(--ink);
-        text-decoration: none;
-        font-weight: 700;
-        background: #fff;
     }
 
     table {
@@ -287,7 +263,7 @@
         background: #fff;
         border-radius: 16px;
         padding: 20px;
-        width: min(460px, 100%);
+        width: min(520px, 100%);
         box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
         display: grid;
         gap: 12px;
@@ -306,22 +282,20 @@
         text-transform: uppercase;
     }
 
-    .modal input,
-    .modal select {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-        font-family: inherit;
+    .modal textarea {
+        min-height: 120px;
+        resize: vertical;
     }
 
     @media (max-width: 900px) {
         .layout { grid-template-columns: 1fr; }
+
         aside {
             flex-direction: row;
             align-items: center;
             justify-content: space-between;
         }
+
         .side-nav {
             grid-auto-flow: column;
             grid-template-columns: unset;
@@ -337,14 +311,13 @@
             }
 
             return collect($state)
-                ->only(['id_barang', 'jumlah', 'harga_satuan', 'total_harga', 'tipe'])
+                ->only(['id_barang', 'nama_barang', 'keterangan', 'tanggal_retur'])
                 ->map(function ($value, $key) {
                     $label = match ($key) {
                         'id_barang' => 'ID Barang',
-                        'jumlah' => 'Jumlah',
-                        'harga_satuan' => 'Harga',
-                        'total_harga' => 'Total',
-                        'tipe' => 'Tipe',
+                        'nama_barang' => 'Nama Barang',
+                        'keterangan' => 'Keterangan',
+                        'tanggal_retur' => 'Tanggal Retur',
                         default => ucfirst(str_replace('_', ' ', $key)),
                     };
 
@@ -355,25 +328,25 @@
     @endphp
     <main>
         <div class="panel">
-            <h1>Stock</h1>
+            <h1>Retur</h1>
             <div class="toolbar">
-                <form class="search" method="GET" action="{{ route('stock') }}" id="searchForm">
+                <form class="search" method="GET" action="{{ route('retur') }}" id="searchForm">
                     <input type="hidden" name="tab" value="{{ $tab }}" />
-                    <input type="text" name="q" placeholder="Search stock..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
+                    <input type="text" name="q" placeholder="Search retur..." value="{{ $search ?? '' }}" id="searchInput" autocomplete="off" />
                 </form>
                 @if ($tab === 'now')
-                    <button class="add-btn" type="button" data-modal="add">Add Stock</button>
+                    <button class="add-btn" type="button" data-modal="add">Add Retur</button>
                 @endif
             </div>
             <div class="tabs">
-                <a class="tab-link {{ $tab === 'now' ? 'active' : '' }}" href="{{ route('stock', ['tab' => 'now', 'q' => $search]) }}">Now</a>
-                <a class="tab-link {{ $tab === 'trash' ? 'active' : '' }}" href="{{ route('stock', ['tab' => 'trash', 'q' => $search]) }}">Trash Bin</a>
-                <a class="tab-link {{ $tab === 'history' ? 'active' : '' }}" href="{{ route('stock', ['tab' => 'history', 'q' => $search]) }}">Update History</a>
+                <a class="tab-link {{ $tab === 'now' ? 'active' : '' }}" href="{{ route('retur', ['tab' => 'now', 'q' => $search]) }}">Now</a>
+                <a class="tab-link {{ $tab === 'trash' ? 'active' : '' }}" href="{{ route('retur', ['tab' => 'trash', 'q' => $search]) }}">Trash Bin</a>
+                <a class="tab-link {{ $tab === 'history' ? 'active' : '' }}" href="{{ route('retur', ['tab' => 'history', 'q' => $search]) }}">Update History</a>
             </div>
-            @if(session('status'))
+            @if (session('status'))
                 <p>{{ session('status') }}</p>
             @endif
-            @if($errors->any())
+            @if ($errors->any())
                 <div>
                     @foreach ($errors->all() as $error)
                         <p>{{ $error }}</p>
@@ -401,7 +374,7 @@
                                 <td>{{ optional($history->created_at)->format('d M Y H:i') ?? '-' }}</td>
                                 <td>
                                     <div class="actions">
-                                        <form method="POST" action="{{ route('stock.history.revert', $history->id) }}">
+                                        <form method="POST" action="{{ route('retur.history.revert', $history->id) }}">
                                             @csrf
                                             <button class="btn btn-update" type="submit" onclick="return confirm('Revert this update?')">Revert</button>
                                         </form>
@@ -417,88 +390,70 @@
                 </table>
                 @include('partials.pagination', ['paginator' => $histories])
             @else
-                @foreach (['in' => ['title' => 'Stock In', 'records' => $stockIn], 'out' => ['title' => 'Stock Out', 'records' => $stockOut]] as $type => $config)
-                    <div class="section-header">
-                        <h2>{{ $config['title'] }}</h2>
-                        @if ($tab === 'now')
-                            <div class="export-actions">
-                                <a href="{{ route('stock.print', ['type' => $type, 'q' => $search]) }}" target="_blank" rel="noopener noreferrer">Print</a>
-                                <a href="{{ route('stock.pdf', ['type' => $type, 'q' => $search]) }}">PDF</a>
-                                <a href="{{ route('stock.excel', ['type' => $type, 'q' => $search]) }}">Excel</a>
-                            </div>
-                        @endif
-                    </div>
-                    <table>
-                        <thead>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Barang</th>
+                            <th>Nama Barang</th>
+                            <th>Keterangan</th>
+                            <th>Tanggal Retur</th>
+                            @if ($tab === 'trash')
+                                <th>Deleted At</th>
+                            @endif
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($returs as $retur)
                             <tr>
-                                <th>ID Barang</th>
-                                <th>Nama Barang</th>
-                                <th>Jumlah</th>
-                                <th>Harga Satuan</th>
-                                <th>Total Harga</th>
-                                <th>Tanggal</th>
+                                <td>{{ $retur->id_barang }}</td>
+                                <td>{{ $retur->item?->nama_barang ?? '-' }}</td>
+                                <td>{{ $retur->keterangan }}</td>
+                                <td>{{ optional($retur->tanggal_retur)->format('d M Y') ?? '-' }}</td>
                                 @if ($tab === 'trash')
-                                    <th>Deleted At</th>
+                                    <td>{{ optional($retur->deleted_at)->format('d M Y H:i') ?? '-' }}</td>
                                 @endif
-                                <th>Action</th>
+                                <td>
+                                    <div class="actions">
+                                        @if ($tab === 'now')
+                                            <button
+                                                class="btn btn-update"
+                                                type="button"
+                                                data-modal="update"
+                                                data-id="{{ $retur->getKey() }}"
+                                                data-id-barang="{{ $retur->id_barang }}"
+                                                data-keterangan="{{ $retur->keterangan }}"
+                                                data-tanggal-retur="{{ optional($retur->tanggal_retur)->format('Y-m-d') }}"
+                                            >
+                                                Update
+                                            </button>
+                                            <form method="POST" action="{{ route('retur.destroy', $retur->getKey()) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-delete" type="submit" onclick="return confirm('Move this retur to trash?')">Delete</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('retur.restore', $retur->getKey()) }}">
+                                                @csrf
+                                                <button class="btn btn-restore" type="submit">Restore</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('retur.force-delete', $retur->getKey()) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this retur permanently?')">Delete Permanently</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($config['records'] as $stock)
-                                <tr>
-                                    <td>{{ $stock->id_barang }}</td>
-                                    <td>{{ $stock->nama_barang ?? '-' }}</td>
-                                    <td>{{ $stock->jumlah }}</td>
-                                    <td>{{ $stock->harga_satuan }}</td>
-                                    <td>{{ $stock->total_harga }}</td>
-                                    <td>{{ optional($stock->created_at)->format('d M Y H:i') ?? '-' }}</td>
-                                    @if ($tab === 'trash')
-                                        <td>{{ optional($stock->deleted_at)->format('d M Y H:i') ?? '-' }}</td>
-                                    @endif
-                                    <td>
-                                        <div class="actions">
-                                            @if ($tab === 'now')
-                                                <button
-                                                    class="btn btn-update"
-                                                    type="button"
-                                                    data-modal="update"
-                                                    data-id="{{ $stock->getKey() }}"
-                                                    data-id-barang="{{ $stock->id_barang }}"
-                                                    data-jumlah="{{ $stock->jumlah }}"
-                                                    data-harga-satuan="{{ $stock->harga_satuan }}"
-                                                    data-total-harga="{{ $stock->total_harga }}"
-                                                    data-tipe="{{ $stock->tipe }}"
-                                                >
-                                                    Update
-                                                </button>
-                                                <form method="POST" action="{{ route('stock.destroy', $stock->getKey()) }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="btn btn-delete" type="submit" onclick="return confirm('Move this stock to trash?')">Delete</button>
-                                                </form>
-                                            @else
-                                                <form method="POST" action="{{ route('stock.restore', $stock->getKey()) }}">
-                                                    @csrf
-                                                    <button class="btn btn-restore" type="submit">Restore</button>
-                                                </form>
-                                                <form method="POST" action="{{ route('stock.force-delete', $stock->getKey()) }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="btn btn-delete" type="submit" onclick="return confirm('Delete this stock permanently?')">Delete Permanently</button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="{{ $tab === 'trash' ? 8 : 7 }}">No {{ strtolower($config['title']) }} found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                    @include('partials.pagination', ['paginator' => $config['records']])
-                @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="{{ $tab === 'trash' ? 6 : 5 }}">No retur found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                @include('partials.pagination', ['paginator' => $returs])
             @endif
         </div>
     </main>
@@ -506,7 +461,7 @@
     <div class="modal-backdrop" id="modalBackdrop">
         <div class="modal" role="dialog" aria-modal="true">
             <header>
-                <h2 id="modalTitle">Add Stock</h2>
+                <h2 id="modalTitle">Add Retur</h2>
                 <button class="btn" type="button" id="modalClose">Close</button>
             </header>
             <form method="POST" id="modalForm">
@@ -516,30 +471,18 @@
                     <label for="modalIdBarang">Barang</label>
                     <select id="modalIdBarang" name="id_barang" required>
                         <option value="" disabled selected>-- Select Barang --</option>
-                        @foreach ($barangs as $barang)
-                            <option value="{{ $barang->id_barang }}">{{ $barang->id_barang }} - {{ $barang->nama_barang }}</option>
+                        @foreach ($items as $item)
+                            <option value="{{ $item->id_barang }}">{{ $item->id_barang }} - {{ $item->nama_barang }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label for="modalJumlah">Jumlah</label>
-                    <input id="modalJumlah" name="jumlah" type="number" min="0" required />
+                    <label for="modalKeterangan">Keterangan</label>
+                    <textarea id="modalKeterangan" name="keterangan" required></textarea>
                 </div>
                 <div>
-                    <label for="modalHargaSatuan">Harga Satuan</label>
-                    <input id="modalHargaSatuan" name="harga_satuan" type="number" min="0" required />
-                </div>
-                <div>
-                    <label for="modalTotalHarga">Total Harga</label>
-                    <input id="modalTotalHarga" name="total_harga" type="number" min="0" required />
-                </div>
-                <div>
-                    <label for="modalTipe">Tipe</label>
-                    <select id="modalTipe" name="tipe" required>
-                        <option value="" disabled selected>-- Select Tipe --</option>
-                        <option value="in">Stock In</option>
-                        <option value="out">Stock Out</option>
-                    </select>
+                    <label for="modalTanggalRetur">Tanggal Retur</label>
+                    <input id="modalTanggalRetur" name="tanggal_retur" type="date" required />
                 </div>
                 <div class="actions">
                     <button class="btn btn-update" type="submit">Save</button>
@@ -556,10 +499,8 @@
     const modalTitle = document.getElementById('modalTitle');
     const modalMethod = document.getElementById('modalMethod');
     const modalIdBarang = document.getElementById('modalIdBarang');
-    const modalJumlah = document.getElementById('modalJumlah');
-    const modalHargaSatuan = document.getElementById('modalHargaSatuan');
-    const modalTotalHarga = document.getElementById('modalTotalHarga');
-    const modalTipe = document.getElementById('modalTipe');
+    const modalKeterangan = document.getElementById('modalKeterangan');
+    const modalTanggalRetur = document.getElementById('modalTanggalRetur');
     const searchInput = document.getElementById('searchInput');
     const searchForm = document.getElementById('searchForm');
     const modalClose = document.getElementById('modalClose');
@@ -570,24 +511,21 @@
         }
 
         if (mode === 'add') {
-            modalTitle.textContent = 'Add Stock';
-            modalForm.action = "{{ route('stock.store') }}";
+            modalTitle.textContent = 'Add Retur';
+            modalForm.action = "{{ route('retur.store') }}";
             modalMethod.value = 'POST';
             modalIdBarang.value = '';
-            modalJumlah.value = '';
-            modalHargaSatuan.value = '';
-            modalTotalHarga.value = '';
-            modalTipe.value = '';
+            modalKeterangan.value = '';
+            modalTanggalRetur.value = '';
         } else {
-            modalTitle.textContent = 'Update Stock';
-            modalForm.action = "{{ url('/stock') }}/" + data.id;
+            modalTitle.textContent = 'Update Retur';
+            modalForm.action = "{{ url('/retur') }}/" + data.id;
             modalMethod.value = 'PUT';
             modalIdBarang.value = data.idBarang || '';
-            modalJumlah.value = data.jumlah || '';
-            modalHargaSatuan.value = data.hargaSatuan || '';
-            modalTotalHarga.value = data.totalHarga || '';
-            modalTipe.value = data.tipe || '';
+            modalKeterangan.value = data.keterangan || '';
+            modalTanggalRetur.value = data.tanggalRetur || '';
         }
+
         backdrop.style.display = 'flex';
     };
 
@@ -598,13 +536,12 @@
                 openModal('add');
                 return;
             }
+
             openModal('update', {
                 id: btn.getAttribute('data-id'),
                 idBarang: btn.getAttribute('data-id-barang'),
-                jumlah: btn.getAttribute('data-jumlah'),
-                hargaSatuan: btn.getAttribute('data-harga-satuan'),
-                totalHarga: btn.getAttribute('data-total-harga'),
-                tipe: btn.getAttribute('data-tipe'),
+                keterangan: btn.getAttribute('data-keterangan'),
+                tanggalRetur: btn.getAttribute('data-tanggal-retur'),
             });
         });
     });

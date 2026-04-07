@@ -14,6 +14,7 @@ class PageAccessManager
             'items' => 'Items',
             'types' => 'Item Types',
             'stock' => 'Stock',
+            'retur' => 'Retur',
             'report' => 'Report',
         ];
     }
@@ -25,6 +26,7 @@ class PageAccessManager
             'items' => [1, 3, 4],
             'types' => [1, 3, 4],
             'stock' => [1, 3, 4],
+            'retur' => [1, 3, 4],
             'report' => [2, 3, 4],
         ];
     }
